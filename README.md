@@ -1,9 +1,11 @@
-# Tools
-Quelques petits générateurs facilitant la génération de fichiers json pour le bot DraftBot 
+# Outils
+Ce repo présente différents outils pour travailler sur DraftBot
 
-## Generators
+## Générateurs
 
-- Mission générator :
+- [Missions](generators/missions.html) - Permet de générer les JSONs pour les missions
 
-Un générateur de json de mission
-<a href="https://draftbot-a-discord-adventure.github.io/Tools/generators/missions">https://draftbot-a-discord-adventure.github.io/Tools/generators/missions</a>
+## Autres liens
+
+- [Crowdin](https://translate.draftbot.com) - Site pour les traductions du bot
+- [Feedbacks](https://feedback.draftbot.com) - Site pour les suggestions du bot
