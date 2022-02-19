@@ -77,9 +77,10 @@ function addTableRow() {
 	tr.insertCell(1).appendChild(getNumberInput());
 	tr.insertCell(2).appendChild(getNumberInput());
 	tr.insertCell(3).appendChild(getNumberInput());
-	tr.insertCell(4).appendChild(getCheckboxInput());
-	tr.insertCell(5).appendChild(getDifficultyInput());
-	tr.insertCell(6).appendChild(getDeleteButton());
+	tr.insertCell(4).appendChild(getNumberInput());
+	tr.insertCell(5).appendChild(getCheckboxInput());
+	tr.insertCell(6).appendChild(getDifficultyInput());
+	tr.insertCell(7).appendChild(getDeleteButton());
 	changeForm();
 }
 
@@ -109,6 +110,7 @@ function generateJson() {
 		obj.objectives = [];
 		obj.gems = [];
 		obj.xp = [];
+		obj.money = [];
 		obj.expirations = [];
 		obj.dailyIndexes = [];
 		const table = document.getElementById("full-table");
@@ -116,11 +118,12 @@ function generateJson() {
 			obj.objectives.push(parseInt(table.rows[i].cells[0].firstChild.value));
 			obj.gems.push(parseInt(table.rows[i].cells[1].firstChild.value));
 			obj.xp.push(parseInt(table.rows[i].cells[2].firstChild.value));
-			obj.expirations.push(parseInt(table.rows[i].cells[3].firstChild.value));
-			if (table.rows[i].cells[4].firstChild.checked) {
+			obj.money.push(parseInt(table.rows[i].cells[3].firstChild.value));
+			obj.expirations.push(parseInt(table.rows[i].cells[4].firstChild.value));
+			if (table.rows[i].cells[5].firstChild.checked) {
 				obj.dailyIndexes.push(i - 1);
 			}
-			switch (table.rows[i].cells[5].firstChild.selectedIndex) {
+			switch (table.rows[i].cells[6].firstChild.selectedIndex) {
 				case 0:
 					obj.difficulties.easy.push(i - 1);
 					break;
@@ -167,6 +170,7 @@ function generateJson() {
 					<th scope="col">Objective</th>
 					<th scope="col">Gems</th>
 					<th scope="col">XP</th>
+					<th scope="col">Money</th>
 					<th scope="col">Expiration time (in hours)</th>
 					<th scope="col">Can be daily</th>
 					<th scope="col">Difficulty</th>
