@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Mission place to place variant generator</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<script>
+function calculateVariant() {
+	const fromMap = document.getElementById("start-map").value;
+	const toMap = document.getElementById("end-map").value;
+	const time = document.getElementById("time-to-go").value;
+	const orderMatter = document.getElementById("order-matter").checked;
+	document.getElementById("variant").textContent = ((fromMap & 0x3ff) << 20 | (toMap & 0x3ff) << 10 | time & 0x3ff | (orderMatter ? 1 : 0) << 31).toString();
+}
+</script>
+
+<body>
+	<div class="container container-sm">
+		<div class="jumbotron">
+			<h1>Mission place to place variant generator</h1>
+		</div>
+		<form>
+			<div class="form-group">
+				<label for="start-map">Start map ip (max: 1023)</label>
+				<input type="number" class="form-control" id="start-map" placeholder="Enter start map ip (max: 1023)" oninput="calculateVariant()" autocomplete="off">
+			</div>
+			<div class="form-group">
+				<label for="end-map">End map ip (max: 1023)</label>
+				<input type="number" class="form-control" id="end-map" placeholder="Enter end map ip (max: 1023)" oninput="calculateVariant()" autocomplete="off">
+			</div>
+			<div class="form-group">
+				<label for="time-to-go">Time to do the travel (max: 1023)</label>
+				<input type="number" class="form-control" id="time-to-go" placeholder="Enter the time (max: 1023)" oninput="calculateVariant()" autocomplete="off">
+			</div>
+			<div class="form-check">
+				<input type="checkbox" class="form-check-input" id="order-matter" onclick="calculateVariant()" autocomplete="off">
+				<label class="form-check-label" for="order-matter">The order matters</label>
+			</div>
+		</form>
+		<br/><br/><br/>
+		<h2>Variant</h2>
+		<br/>
+		<pre><code id="variant"></code></pre>
+	</div>
+</body>
+</html>
