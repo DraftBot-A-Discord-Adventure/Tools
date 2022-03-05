@@ -12,7 +12,7 @@ function calculateVariant() {
 	const toMap = document.getElementById("end-map").value;
 	const time = document.getElementById("time-to-go").value;
 	const orderMatter = document.getElementById("order-matter").checked;
-	document.getElementById("variant").textContent = ((fromMap & 0x3ff) << 20 | (toMap & 0x3ff) << 10 | time & 0x3ff | (orderMatter ? 1 : 0) << 31).toString();
+	document.getElementById("variant").textContent = ((fromMap & 0x3ff) << 20 | (toMap & 0x3ff) << 10 | time & 0x3ff | (orderMatter ? 1 : 0) << 30).toString();
 }
 </script>
 
