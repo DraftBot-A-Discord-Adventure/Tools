@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This script auto update a docker container
 #
 # Environment variables:
@@ -13,19 +15,23 @@
 # - Get the docker image and docker compose file automatically
 
 # Check env variables
-if [[ -z "${CONTAINER_NAME}" ]]; then
+if [ -z "${CONTAINER_NAME}" ]
+then
     echo "env var CONTAINER_NAME not set"
     exit 1
 fi
-if [[ -z "${DOCKER_IMAGE_NAME}" ]]; then
+if [ -z "${DOCKER_IMAGE_NAME}" ]
+then
     echo "env var DOCKER_IMAGE_NAME not set"
     exit 1
 fi
-if [[ -z "${DOCKER_COMPOSE_FILE_PATH}" ]]; then
+if [ -z "${DOCKER_COMPOSE_FILE_PATH}" ]
+then
     echo "env var DOCKER_COMPOSE_FILE_PATH not set"
     exit 1
 fi
-if [[ -z "${WEBHOOK}" ]]; then
+if [ -z "${WEBHOOK}" ]
+then
     echo "env var WEBHOOK not set"
     exit 1
 fi
@@ -56,10 +62,17 @@ then
     # Get current hash
     latestDigest=$(curl https://hub.docker.com/v2/repositories/${DOCKER_IMAGE_NAME}/tags/latest | jq .digest | cut -c 2-72)
     logit "Latest remote digest of image \"${DOCKER_IMAGE_NAME}\" is $latestDigest"
+    latestDigestValid=$(echo $latestDigest | grep -v "sha256")
+
+    if [ -n "$latestDigestValid" ]
+    then
+        logit "Error remote digest invalid"
+        exit 1
+    fi
 
     logit "Forced update: $FORCE_UPDATE_ANYWAY"
 
-    if [ "$FORCE_UPDATE_ANYWAY" == "1" ] || [ $currentDigest != $latestDigest ]
+    if [[ "$FORCE_UPDATE_ANYWAY" == "1" || $currentDigest != $latestDigest ]];
     then
         logit "Different digests or forced update, updating..."
 
@@ -68,7 +81,8 @@ then
 
         {
             # Launch pre update script if exists
-            if [[ -z "${PRE_UPDATE_SCRIPT}" ]]; then
+            if [ -z "${PRE_UPDATE_SCRIPT}" ]
+            then
                 logit "No pre update script found, skipping"
             else
                 logit "Launching pre update script $PRE_UPDATE_SCRIPT"
@@ -96,7 +110,8 @@ then
             logit "Sent webhook notification"
 
             # Launch post update script if exists
-            if [[ -z "${POST_UPDATE_SCRIPT}" ]]; then
+            if [ -z "${POST_UPDATE_SCRIPT}" ]
+            then
                 logit "No post update script found, skipping"
             else
                 logit "Launching post update script $POST_UPDATE_SCRIPT"
