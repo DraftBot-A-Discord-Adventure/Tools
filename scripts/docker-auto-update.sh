@@ -86,7 +86,7 @@ then
                 logit "No pre update script found, skipping"
             else
                 logit "Launching pre update script $PRE_UPDATE_SCRIPT"
-                sh $PRE_UPDATE_SCRIPT
+                bash $PRE_UPDATE_SCRIPT
             fi
 
             # Pull latest image
@@ -115,7 +115,7 @@ then
                 logit "No post update script found, skipping"
             else
                 logit "Launching post update script $POST_UPDATE_SCRIPT"
-                sh $POST_UPDATE_SCRIPT
+                bash $POST_UPDATE_SCRIPT
             fi
         }
 
