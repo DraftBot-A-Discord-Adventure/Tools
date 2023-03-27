@@ -36,13 +36,21 @@ do
             logit "Creating freshstatus maintenance"
 
             # Call freshstatus api to put the bot under maintenance
-            maintenanceId=$(curl -s -u ${FRESHSTATUS_API_KEY}:${FRESHSTATUS_DOMAIN} -H "Content-Type: application/json" -X POST --data "{\"title\":\"Mise à jour du bot\",\"start_time\":\"$(TZ=UTC date +"%Y-%m-%dT%H:%M:%SZ")\",\"end_time\":\"$(TZ=UTC date --date "10 min" +"%Y-%m-%dT%H:%M:%SZ")\",\"affected_components\":[{\"component\":\"${FRESHSTATUS_COMPONENT}\",\"new_status\":\"UM\"}]}" 'https://public-api.freshstatus.io/api/v1/maintenance/') | jq .id
-            curl -s -u ${FRESHSTATUS_API_KEY}:${FRESHSTATUS_DOMAIN} -H "Content-Type: application/json" -X POST "https://public-api.freshstatus.io/api/v1/maintenance/$maintenanceId/start/"
+            maintenanceReturn=$(curl -s -u ${FRESHSTATUS_API_KEY}:${FRESHSTATUS_DOMAIN} -H "Content-Type: application/json" -X POST --data "{\"title\":\"Mise à jour du bot\",\"start_time\":\"$(TZ=UTC date +"%Y-%m-%dT%H:%M:%SZ")\",\"end_time\":\"$(TZ=UTC date --date "10 min" +"%Y-%m-%dT%H:%M:%SZ")\",\"affected_components\":[{\"component\":\"${FRESHSTATUS_COMPONENT}\",\"new_status\":\"UM\"}]}" 'https://public-api.freshstatus.io/api/v1/maintenance/')
+            logit "Maintenance return: $maintenanceReturn"
 
-            logit "Freshstatus maintenance created and started"
+            maintenanceId=$(echo $maintenanceReturn | jq .id)
+            if [ -z "${maintenanceId}" ]
+            then
+                logit "Error maintenance ID empty"
+            else
+                curl -s -u ${FRESHSTATUS_API_KEY}:${FRESHSTATUS_DOMAIN} -H "Content-Type: application/json" -X POST "https://public-api.freshstatus.io/api/v1/maintenance/$maintenanceId/start/"
 
-            # Save the maintenance id for post update
-            echo $maintenanceId > /tmp/freshstatus_${CONTAINER_NAME}
+                logit "Freshstatus maintenance created and started"
+
+                # Save the maintenance id for post update
+                echo $maintenanceId > /tmp/freshstatus_${CONTAINER_NAME}
+            fi
         fi
     fi
 
