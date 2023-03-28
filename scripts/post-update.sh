@@ -14,6 +14,8 @@ if [ -e /tmp/freshstatus_${CONTAINER_NAME} ]
 then
     curl -s -u ${FRESHSTATUS_API_KEY}:${FRESHSTATUS_DOMAIN} -H "Content-Type: application/json" -X POST "https://public-api.freshstatus.io/api/v1/maintenance/$(cat /tmp/freshstatus_${CONTAINER_NAME})/complete/"
 
+    rm /tmp/freshstatus_${CONTAINER_NAME}
+
     logit "Freshstatus maintenance completed"
 else
     logit "Tmp file /tmp/freshstatus_${CONTAINER_NAME} doesn't exists"
