@@ -50,7 +50,6 @@ fi
 
 # Check if docker is running
 running=$(docker ps --format '{{json .Names}}' | grep "\"${CONTAINER_NAME}\"")
-
 if [ -n "$running" ]
 then
     logit "Container \"${CONTAINER_NAME}\" is running"
@@ -62,9 +61,8 @@ then
     # Get current hash
     latestDigest=$(curl https://hub.docker.com/v2/repositories/${DOCKER_IMAGE_NAME}/tags/latest | jq .digest | cut -c 2-72)
     logit "Latest remote digest of image \"${DOCKER_IMAGE_NAME}\" is $latestDigest"
-    latestDigestValid=$(echo $latestDigest | grep -v "sha256")
 
-    if [ -n "$latestDigestValid" ]
+    if [[ $latestDigest != *"sha256"* ]];
     then
         logit "Error remote digest invalid"
         exit 1
