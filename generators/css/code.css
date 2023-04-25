@@ -8,15 +8,6 @@ tt {
 	border-radius: 6px;
 }
 
-pre > code {
-	padding: 0;
-	margin: 0;
-	word-break: normal;
-	white-space: pre;
-	background: transparent;
-	border: 0;
-}
-
 pre code,
 pre tt {
 	display: inline;
@@ -26,6 +17,7 @@ pre tt {
 	overflow: visible;
 	line-height: inherit;
 	word-wrap: normal;
-	background-color: transparent;
 	border: 0;
+	word-break: normal;
+	white-space: pre;
 }
