@@ -1,145 +1,150 @@
 <!doctype html>
 <html lang="en">
+
 <head>
 	<meta charset="utf-8">
 	<title>Mission generator</title>
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+		integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="./css/code.css">
 </head>
 
 <script>
-window.addEventListener("DOMContentLoaded", () => {
-	addTableRow();
-});
+	window.addEventListener("DOMContentLoaded", () => {
+		addTableRow();
+	});
 
-function handleCampaignCheckbox() {
-	const campaignCheckbox = document.getElementById("campaignOnly");
-	const table = document.getElementById("full-table");
-	table.hidden = campaignCheckbox.checked;
-	const addRowButton = document.getElementById("add-row");
-	addRowButton.hidden = campaignCheckbox.checked;
-	changeForm();
-}
-
-function getNumberInput() {
-	const input = document.createElement("input");
-	input.setAttribute("type", "number");
-	input.setAttribute("class", "form-control");
-	input.setAttribute("step", "1");
-	input.setAttribute("min", "0");
-	input.setAttribute("oninput", "changeForm()");
-	return input;
-}
-
-function getCheckboxInput() {
-	const input = document.createElement("input");
-	input.setAttribute("type", "checkbox");
-	input.setAttribute("class", "form-check-input");
-	input.disabled = document.getElementById("campaignOnly").checked;
-	input.setAttribute("oninput", "changeForm()");
-	return input;
-}
-
-function getDifficultyInput() {
-	const select = document.createElement("select");
-	select.setAttribute("onchange", "changeForm()");
-	const easy = document.createElement("option");
-	easy.value = "Easy";
-	easy.text = easy.value;
-	const medium = document.createElement("option");
-	medium.value = "Medium";
-	medium.text = medium.value;
-	const hard = document.createElement("option");
-	hard.value = "Hard";
-	hard.text = hard.value;
-	select.appendChild(easy);
-	select.appendChild(medium);
-	select.appendChild(hard);
-	return select;
-}
-
-function getDeleteButton() {
-	const button = document.createElement("button");
-	button.setAttribute("type", "button");
-	button.setAttribute("class", "btn btn-danger");
-	button.setAttribute("onclick", "removeTableTow(this)");
-	const span = document.createElement("span");
-	span.setAttribute("aria-hidden", "true");
-	span.textContent = "×";
-	button.appendChild(span);
-	return button;
-}
-
-function addTableRow() {
-	const table = document.getElementById("full-table");
-	const rowsCount = table.rows.length;
-	const tr = table.insertRow(rowsCount);
-	tr.insertCell(0).appendChild(getNumberInput());
-	tr.insertCell(1).appendChild(getNumberInput());
-	tr.insertCell(2).appendChild(getNumberInput());
-	tr.insertCell(3).appendChild(getNumberInput());
-	tr.insertCell(4).appendChild(getNumberInput());
-	tr.insertCell(5).appendChild(getCheckboxInput());
-	tr.insertCell(6).appendChild(getDifficultyInput());
-	tr.insertCell(7).appendChild(getDeleteButton());
-	changeForm();
-}
-
-function removeTableTow(button) {
-	const table = document.getElementById("full-table");
-	table.deleteRow(button.parentNode.parentNode.rowIndex);
-	changeForm();
-}
-
-function changeForm() {
-	document.getElementById("json").textContent = generateJson();
-}
-
-function generateJson() {
-	const obj = {};
-	obj.translations = {};
-	obj.translations.fr = {};
-	obj.translations.fr.desc = document.getElementById("french-text").value;
-	obj.translations.en = {};
-	obj.translations.en.desc = document.getElementById("english-text").value;
-	obj.campaignOnly = document.getElementById("campaignOnly").checked;
-	if (!obj.campaignOnly) {
-		obj.difficulties = {};
-		obj.difficulties.easy = [];
-		obj.difficulties.medium = [];
-		obj.difficulties.hard = [];
-		obj.objectives = [];
-		obj.gems = [];
-		obj.xp = [];
-		obj.money = [];
-		obj.expirations = [];
-		obj.dailyIndexes = [];
+	function handleCampaignCheckbox() {
+		const campaignCheckbox = document.getElementById("campaignOnly");
 		const table = document.getElementById("full-table");
-		for (let i = 1; i < table.rows.length; ++i) {
-			obj.objectives.push(parseInt(table.rows[i].cells[0].firstChild.value));
-			obj.gems.push(parseInt(table.rows[i].cells[1].firstChild.value));
-			obj.xp.push(parseInt(table.rows[i].cells[2].firstChild.value));
-			obj.money.push(parseInt(table.rows[i].cells[3].firstChild.value));
-			obj.expirations.push(parseInt(table.rows[i].cells[4].firstChild.value));
-			if (table.rows[i].cells[5].firstChild.checked) {
-				obj.dailyIndexes.push(i - 1);
-			}
-			switch (table.rows[i].cells[6].firstChild.selectedIndex) {
-				case 0:
-					obj.difficulties.easy.push(i - 1);
-					break;
-				case 1:
-					obj.difficulties.medium.push(i - 1);
-					break;
-				case 2:
-					obj.difficulties.hard.push(i - 1);
-					break;
-				default:
-					break;
+		table.hidden = campaignCheckbox.checked;
+		const addRowButton = document.getElementById("add-row");
+		addRowButton.hidden = campaignCheckbox.checked;
+		changeForm();
+	}
+
+	function getNumberInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "number");
+		input.setAttribute("class", "form-control");
+		input.setAttribute("step", "1");
+		input.setAttribute("min", "0");
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
+	function getCheckboxInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "checkbox");
+		input.setAttribute("class", "form-check-input");
+		input.disabled = document.getElementById("campaignOnly").checked;
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
+	function getDifficultyInput() {
+		const select = document.createElement("select");
+		select.setAttribute("onchange", "changeForm()");
+		const easy = document.createElement("option");
+		easy.value = "Easy";
+		easy.text = easy.value;
+		const medium = document.createElement("option");
+		medium.value = "Medium";
+		medium.text = medium.value;
+		const hard = document.createElement("option");
+		hard.value = "Hard";
+		hard.text = hard.value;
+		select.appendChild(easy);
+		select.appendChild(medium);
+		select.appendChild(hard);
+		return select;
+	}
+
+	function getDeleteButton() {
+		const button = document.createElement("button");
+		button.setAttribute("type", "button");
+		button.setAttribute("class", "btn btn-danger");
+		button.setAttribute("onclick", "removeTableTow(this)");
+		const span = document.createElement("span");
+		span.setAttribute("aria-hidden", "true");
+		span.textContent = "×";
+		button.appendChild(span);
+		return button;
+	}
+
+	function addTableRow() {
+		const table = document.getElementById("full-table");
+		const rowsCount = table.rows.length;
+		const tr = table.insertRow(rowsCount);
+		tr.insertCell(0).appendChild(getNumberInput());
+		tr.insertCell(1).appendChild(getNumberInput());
+		tr.insertCell(2).appendChild(getNumberInput());
+		tr.insertCell(3).appendChild(getNumberInput());
+		tr.insertCell(4).appendChild(getNumberInput());
+		tr.insertCell(5).appendChild(getCheckboxInput());
+		tr.insertCell(6).appendChild(getDifficultyInput());
+		tr.insertCell(7).appendChild(getDeleteButton());
+		changeForm();
+	}
+
+	function removeTableTow(button) {
+		const table = document.getElementById("full-table");
+		table.deleteRow(button.parentNode.parentNode.rowIndex);
+		changeForm();
+	}
+
+	function changeForm() {
+		document.getElementById("json").textContent = generateJson();
+	}
+
+	function generateJson() {
+		const obj = {};
+		obj.translations = {};
+		obj.translations.fr = {};
+		obj.translations.fr.desc = document.getElementById("french-text").value;
+		obj.translations.en = {};
+		obj.translations.en.desc = document.getElementById("english-text").value;
+		obj.campaignOnly = document.getElementById("campaignOnly").checked;
+		if (!obj.campaignOnly) {
+			obj.difficulties = {};
+			obj.difficulties.easy = [];
+			obj.difficulties.medium = [];
+			obj.difficulties.hard = [];
+			obj.objectives = [];
+			obj.gems = [];
+			obj.xp = [];
+			obj.money = [];
+			obj.expirations = [];
+			obj.dailyIndexes = [];
+			const table = document.getElementById("full-table");
+			for (let i = 1; i < table.rows.length; ++i) {
+				obj.objectives.push(parseInt(table.rows[i].cells[0].firstChild.value));
+				obj.gems.push(parseInt(table.rows[i].cells[1].firstChild.value));
+				obj.xp.push(parseInt(table.rows[i].cells[2].firstChild.value));
+				obj.money.push(parseInt(table.rows[i].cells[3].firstChild.value));
+				obj.expirations.push(parseInt(table.rows[i].cells[4].firstChild.value));
+				if (table.rows[i].cells[5].firstChild.checked) {
+					obj.dailyIndexes.push(i - 1);
+				}
+				switch (table.rows[i].cells[6].firstChild.selectedIndex) {
+					case 0:
+						obj.difficulties.easy.push(i - 1);
+						break;
+					case 1:
+						obj.difficulties.medium.push(i - 1);
+						break;
+					case 2:
+						obj.difficulties.hard.push(i - 1);
+						break;
+					default:
+						break;
+				}
 			}
 		}
+		return JSON.stringify(obj, undefined, '\t');
 	}
-	return JSON.stringify(obj, undefined, '\t');
-}
 </script>
 
 <body>
@@ -151,41 +156,47 @@ function generateJson() {
 		<form>
 			<div class="form-group">
 				<label for="french-text">French text</label>
-				<input type="text" class="form-control" id="french-text" aria-describedby="french-text-help" placeholder="Enter french text" oninput="changeForm()" autocomplete="off">
-				<small id="french-text-help" class="form-text text-muted">You can use the variables {objective} or {variantText}</small>
+				<input type="text" class="form-control" id="french-text" aria-describedby="french-text-help"
+					placeholder="Enter french text" oninput="changeForm()" autocomplete="off">
+				<small id="french-text-help" class="form-text text-muted">You can use the variables {objective} or
+					{variantText}</small>
 			</div>
 			<div class="form-group">
 				<label for="english-text">English text</label>
-				<input type="text" class="form-control" id="english-text" aria-describedby="english-text-help" placeholder="Enter english text" oninput="changeForm()" autocomplete="off">
-				<small id="english-text-help" class="form-text text-muted">You can use the variables {objective} or {variantText}</small>
+				<input type="text" class="form-control" id="english-text" aria-describedby="english-text-help"
+					placeholder="Enter english text" oninput="changeForm()" autocomplete="off">
+				<small id="english-text-help" class="form-text text-muted">You can use the variables {objective} or
+					{variantText}</small>
 			</div>
 			<div class="form-check">
-				<input type="checkbox" class="form-check-input" id="campaignOnly" onclick="handleCampaignCheckbox()" autocomplete="off">
+				<input type="checkbox" class="form-check-input" id="campaignOnly" onclick="handleCampaignCheckbox()"
+					autocomplete="off">
 				<label class="form-check-label" for="campaignOnly">Campaign only</label>
 			</div>
-			<br/>
+			<br />
 			<table class="table text-center" id="full-table">
 				<thead>
-				<tr>
-					<th scope="col">Objective</th>
-					<th scope="col">Gems</th>
-					<th scope="col">XP</th>
-					<th scope="col">Money</th>
-					<th scope="col">Expiration time (in hours)</th>
-					<th scope="col">Can be daily</th>
-					<th scope="col">Difficulty</th>
-					<th scope="col">Delete</th>
-				</tr>
+					<tr>
+						<th scope="col">Objective</th>
+						<th scope="col">Gems</th>
+						<th scope="col">XP</th>
+						<th scope="col">Money</th>
+						<th scope="col">Expiration time (in hours)</th>
+						<th scope="col">Can be daily</th>
+						<th scope="col">Difficulty</th>
+						<th scope="col">Delete</th>
+					</tr>
 				</thead>
 				<tbody>
 				</tbody>
 			</table>
 		</form>
 		<button type="button" class="btn btn-info" onclick="addTableRow()" id="add-row">Add a row</button>
-		<br/><br/><br/>
+		<br /><br /><br />
 		<h2>Generated JSON</h2>
-		<br/>
+		<br />
 		<pre><code id="json"></code></pre>
 	</div>
 </body>
+
 </html>

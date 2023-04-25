@@ -1,120 +1,126 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-	<meta charset="utf-8">
-	<title>Monster generator</title>
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <meta charset="utf-8">
+    <title>Monster generator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="./css/code.css">
 </head>
 
 <script>
 
-function updateFightPointsRangeValue(event) {
-    document.getElementById('fightpointsrangeval').innerText = parseInt(event.target.value) * 10;
-    changeForm();
-}
-
-function updateAttackRangeValue(event) {
-    document.getElementById('attackrangeval').innerText = parseInt(event.target.value) * 10;
-    changeForm();
-}
-
-function updateDefenseRangeValue(event) {
-    document.getElementById('defenserangeval').innerText = parseInt(event.target.value) * 10;
-    changeForm();
-}
-
-function updateSpeedRangeValue(event) {
-    document.getElementById('speedrangeval').innerText = parseInt(event.target.value) * 10;
-    changeForm();
-}
-
-function changeForm() {
-    const strengthElement = document.getElementById("strength");
-	const totalPointsAllowed = parseInt(strengthElement.options[strengthElement.selectedIndex].value)
-    document.getElementById("pointsMax").innerText = totalPointsAllowed === 0 ? "?" : totalPointsAllowed;
-    const fightPointsVal = parseInt(document.getElementById('fightpointsrangeval').innerText) / 10;
-    const attackVal = parseInt(document.getElementById('attackrangeval').innerText) / 10;
-    const defenseVal = parseInt(document.getElementById('defenserangeval').innerText) / 10;
-    const speedVal = parseInt(document.getElementById('speedrangeval').innerText) / 10;
-    const pointsUsed = fightPointsVal + attackVal + defenseVal + speedVal;
-    document.getElementById("pointsUsed").innerText = pointsUsed;
-    document.getElementById("pointsColor").style.color = pointsUsed === totalPointsAllowed ? "green" : "red";
-
-    const minLevel = 10;
-    const maxLevel = 100;
-    const stepLevel = 10;
-    const statsTbody = document.getElementById("stats");
-    statsTbody.innerHTML = "";
-
-    for (let i = minLevel; i <= maxLevel; i += stepLevel) {
-        const row = document.createElement("tr");
-
-        const cellLevel = document.createElement("td");
-        const cellLevelText = document.createTextNode(`${i}`);
-        cellLevel.appendChild(cellLevelText);
-        row.appendChild(cellLevel);
-
-        const cellFightPoints = document.createElement("td");
-        const cellFightPointsText = document.createTextNode(`${Math.round((0.06211 * i * i + 11.18950 * i + 30.30303) * fightPointsVal / 10.0)}`);
-        cellFightPoints.appendChild(cellFightPointsText);
-        row.appendChild(cellFightPoints);
-
-        const cellAttack = document.createElement("td");
-        const cellAttackText = document.createTextNode(`${Math.round((0.02825 * i * i + 0.94359 * i + 25.56363) * attackVal / 10.0)}`);
-        cellAttack.appendChild(cellAttackText);
-        row.appendChild(cellAttack);
-
-        const cellDefense = document.createElement("td");
-        const cellDefenseText = document.createTextNode(`${Math.round((0.03576 * i * i + 0.55352 * i + 21.67272) * defenseVal / 10.0)}`);
-        cellDefense.appendChild(cellDefenseText);
-        row.appendChild(cellDefense);
-
-        const cellSpeed = document.createElement("td");
-        const cellSpeedText = document.createTextNode(`${Math.round((0.01359 * i * i + 0.21588 * i + 9.44242) * speedVal / 10.0)}`);
-        cellSpeed.appendChild(cellSpeedText);
-        row.appendChild(cellSpeed);
-
-        statsTbody.appendChild(row);
+    function updateFightPointsRangeValue(event) {
+        document.getElementById('fightpointsrangeval').innerText = parseInt(event.target.value) * 10;
+        changeForm();
     }
 
-    document.getElementById("json").textContent = generateJson();
-}
+    function updateAttackRangeValue(event) {
+        document.getElementById('attackrangeval').innerText = parseInt(event.target.value) * 10;
+        changeForm();
+    }
 
-function generateJson() {
-	const obj = {};
-	obj.translations = {};
-	obj.translations.fr = "NomFr";
-	obj.translations.en = "NameEn";
-	obj.fightPointsRatio = parseInt(document.getElementById('fightpointsrangeval').innerText);
-	obj.attackRatio = parseInt(document.getElementById('attackrangeval').innerText);
-	obj.defenseRatio = parseInt(document.getElementById('defenserangeval').innerText);
-	obj.speedRatio = parseInt(document.getElementById('speedrangeval').innerText);
-	obj.breath = 999999;
-	obj.maxBreath = 999999;
-	obj.breathRegen = 999999;
-	obj.attacks = [{"id":"attackName","minLevel":0}];
-	obj.maps = [999999];
-	return JSON.stringify(obj, undefined, '\t');
-}
+    function updateDefenseRangeValue(event) {
+        document.getElementById('defenserangeval').innerText = parseInt(event.target.value) * 10;
+        changeForm();
+    }
 
-window.onload = function() {
-  changeForm();
-};
+    function updateSpeedRangeValue(event) {
+        document.getElementById('speedrangeval').innerText = parseInt(event.target.value) * 10;
+        changeForm();
+    }
+
+    function changeForm() {
+        const strengthElement = document.getElementById("strength");
+        const totalPointsAllowed = parseInt(strengthElement.options[strengthElement.selectedIndex].value)
+        document.getElementById("pointsMax").innerText = totalPointsAllowed === 0 ? "?" : totalPointsAllowed;
+        const fightPointsVal = parseInt(document.getElementById('fightpointsrangeval').innerText) / 10;
+        const attackVal = parseInt(document.getElementById('attackrangeval').innerText) / 10;
+        const defenseVal = parseInt(document.getElementById('defenserangeval').innerText) / 10;
+        const speedVal = parseInt(document.getElementById('speedrangeval').innerText) / 10;
+        const pointsUsed = fightPointsVal + attackVal + defenseVal + speedVal;
+        document.getElementById("pointsUsed").innerText = pointsUsed;
+        document.getElementById("pointsColor").style.color = pointsUsed === totalPointsAllowed ? "green" : "red";
+
+        const minLevel = 10;
+        const maxLevel = 100;
+        const stepLevel = 10;
+        const statsTbody = document.getElementById("stats");
+        statsTbody.innerHTML = "";
+
+        for (let i = minLevel; i <= maxLevel; i += stepLevel) {
+            const row = document.createElement("tr");
+
+            const cellLevel = document.createElement("td");
+            const cellLevelText = document.createTextNode(`${i}`);
+            cellLevel.appendChild(cellLevelText);
+            row.appendChild(cellLevel);
+
+            const cellFightPoints = document.createElement("td");
+            const cellFightPointsText = document.createTextNode(`${Math.round((0.06211 * i * i + 11.18950 * i + 30.30303) * fightPointsVal / 10.0)}`);
+            cellFightPoints.appendChild(cellFightPointsText);
+            row.appendChild(cellFightPoints);
+
+            const cellAttack = document.createElement("td");
+            const cellAttackText = document.createTextNode(`${Math.round((0.02825 * i * i + 0.94359 * i + 25.56363) * attackVal / 10.0)}`);
+            cellAttack.appendChild(cellAttackText);
+            row.appendChild(cellAttack);
+
+            const cellDefense = document.createElement("td");
+            const cellDefenseText = document.createTextNode(`${Math.round((0.03576 * i * i + 0.55352 * i + 21.67272) * defenseVal / 10.0)}`);
+            cellDefense.appendChild(cellDefenseText);
+            row.appendChild(cellDefense);
+
+            const cellSpeed = document.createElement("td");
+            const cellSpeedText = document.createTextNode(`${Math.round((0.01359 * i * i + 0.21588 * i + 9.44242) * speedVal / 10.0)}`);
+            cellSpeed.appendChild(cellSpeedText);
+            row.appendChild(cellSpeed);
+
+            statsTbody.appendChild(row);
+        }
+
+        document.getElementById("json").textContent = generateJson();
+    }
+
+    function generateJson() {
+        const obj = {};
+        obj.translations = {};
+        obj.translations.fr = "NomFr";
+        obj.translations.en = "NameEn";
+        obj.fightPointsRatio = parseInt(document.getElementById('fightpointsrangeval').innerText);
+        obj.attackRatio = parseInt(document.getElementById('attackrangeval').innerText);
+        obj.defenseRatio = parseInt(document.getElementById('defenserangeval').innerText);
+        obj.speedRatio = parseInt(document.getElementById('speedrangeval').innerText);
+        obj.breath = 999999;
+        obj.maxBreath = 999999;
+        obj.breathRegen = 999999;
+        obj.attacks = [{ "id": "attackName", "minLevel": 0 }];
+        obj.maps = [999999];
+        return JSON.stringify(obj, undefined, '\t');
+    }
+
+    window.onload = function () {
+        changeForm();
+        hljs.highlightAll();
+    };
 
 </script>
 
 <body>
-	<div class="container">
-		<div class="jumbotron">
-			<h1>Monster generator</h1>
-			<p>Generate a monster's stats</p>
-		</div>
-		<div class="row align-items-start">
+    <div class="container">
+        <div class="jumbotron">
+            <h1>Monster generator</h1>
+            <p>Generate a monster's stats</p>
+        </div>
+        <div class="row align-items-start">
             <div class="col">
                 <form>
                     <div class="form-group">
                         <label for="strength">Monster's global strength</label>
-                        <br/>
+                        <br />
                         <select name="strength" id="strength" onchange="changeForm()" autocomplete="off">
                             <option value="10">Weak</option>
                             <option value="20" selected>Medium</option>
@@ -123,38 +129,48 @@ window.onload = function() {
                             <option value="50">Final boss</option>
                         </select>
                     </div>
-                    <br/>
+                    <br />
                     <div class="form-group">
-                        <p>Points used: <strong id="pointsColor" style="color: red"><span id="pointsUsed">4</span>/<span id="pointsMax">?</span></strong></p>
-                        <label for="fightpoints">⚡ Fight points: <strong><span id="fightpointsrangeval">50</span>%</strong> of an average player's fight points</label>
-                        <br/>
-                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="fightpoints" onInput="updateFightPointsRangeValue(event)" autocomplete="off">
-                        <br/>
-                        <label for="attack">🗡️ Attack: <strong><span id="attackrangeval">50</span>%</strong> of an average player's attack</label>
-                        <br/>
-                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="attack" onInput="updateAttackRangeValue(event)" autocomplete="off">
-                        <br/>
-                        <label for="defense">🛡️ Defense: <strong><span id="defenserangeval">50</span>%</strong> of an average player's defense</label>
-                        <br/>
-                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="defense" onInput="updateDefenseRangeValue(event)" autocomplete="off">
-                        <br/>
-                        <label for="speed">🚀 Speed: <strong><span id="speedrangeval">50</span>%</strong> of an average player's speed</label>
-                        <br/>
-                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="speed" onInput="updateSpeedRangeValue(event)" autocomplete="off">
+                        <p>Points used: <strong id="pointsColor" style="color: red"><span id="pointsUsed">4</span>/<span
+                                    id="pointsMax">?</span></strong></p>
+                        <label for="fightpoints">⚡ Fight points: <strong><span
+                                    id="fightpointsrangeval">50</span>%</strong> of an average player's fight
+                            points</label>
+                        <br />
+                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="fightpoints"
+                            onInput="updateFightPointsRangeValue(event)" autocomplete="off">
+                        <br />
+                        <label for="attack">🗡️ Attack: <strong><span id="attackrangeval">50</span>%</strong> of an
+                            average player's attack</label>
+                        <br />
+                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="attack"
+                            onInput="updateAttackRangeValue(event)" autocomplete="off">
+                        <br />
+                        <label for="defense">🛡️ Defense: <strong><span id="defenserangeval">50</span>%</strong> of an
+                            average player's defense</label>
+                        <br />
+                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="defense"
+                            onInput="updateDefenseRangeValue(event)" autocomplete="off">
+                        <br />
+                        <label for="speed">🚀 Speed: <strong><span id="speedrangeval">50</span>%</strong> of an average
+                            player's speed</label>
+                        <br />
+                        <input type="range" class="form-range" min="1" max="20" step="1" value="5" id="speed"
+                            onInput="updateSpeedRangeValue(event)" autocomplete="off">
                     </div>
-                </div>
-                <div class="col">
+            </div>
+            <div class="col">
                 <h2>Stats</h2>
-                <br/>
+                <br />
                 <table class="table text-center">
                     <thead>
-                    <tr>
-                        <th scope="col">📔 Level</th>
-                        <th scope="col">⚡ Fight points</th>
-                        <th scope="col">🗡️ Attack</th>
-                        <th scope="col">🛡️ Defense</th>
-                        <th scope="col">🚀 Speed</th>
-                    </tr>
+                        <tr>
+                            <th scope="col">📔 Level</th>
+                            <th scope="col">⚡ Fight points</th>
+                            <th scope="col">🗡️ Attack</th>
+                            <th scope="col">🛡️ Defense</th>
+                            <th scope="col">🚀 Speed</th>
+                        </tr>
                     </thead>
                     <tbody id="stats">
                     </tbody>
@@ -162,8 +178,9 @@ window.onload = function() {
             </div>
         </div>
         <h2>Generated JSON</h2>
-		<br/>
-		<pre><code id="json"></code></pre>
-	</div>
+        <br />
+        <pre><code id="json"></code></pre>
+    </div>
 </body>
+
 </html>
