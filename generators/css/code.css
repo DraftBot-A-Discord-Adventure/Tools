@@ -1,0 +1,31 @@
+code,
+tt {
+	padding: 0.2em 0.4em;
+	margin: 0;
+	font-size: 85%;
+	white-space: break-spaces;
+	background-color: rgba(175, 184, 193, 0.2) !important;
+	border-radius: 6px;
+}
+
+pre > code {
+	padding: 0;
+	margin: 0;
+	word-break: normal;
+	white-space: pre;
+	background: transparent;
+	border: 0;
+}
+
+pre code,
+pre tt {
+	display: inline;
+	max-width: auto;
+	padding: 0;
+	margin: 0;
+	overflow: visible;
+	line-height: inherit;
+	word-wrap: normal;
+	background-color: transparent;
+	border: 0;
+}
