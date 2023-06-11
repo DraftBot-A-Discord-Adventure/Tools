@@ -1,9 +1,13 @@
 from PIL import Image
 
-imageMap = Image.open('./Ressources/map.jpg')
+imageMapContinent1 = Image.open('./Ressources/map.jpg')
+imageMapIleVolcanique = Image.open('./Ressources/volcano_island.jpg')
 imageCursor = Image.open('./Ressources/Marqueur.png')
+imageCross = Image.open('./Ressources/cross.png')
 
-ListPointeurs = [
+imageCrossCenter = [75, 75]
+
+ListPointeursContinent1 = [
     ["1_26", 929, 157],
     ["6_7", 2089, 2769],
     ["6_26", 1274, 1114],
@@ -82,7 +86,27 @@ ListPointeurs = [
     ["32", 739, 2962]
 ]
 
-for mapLink in ListPointeurs:
-    newMap = imageMap.copy()
+ListPointeursIleVolcanique = [
+    ["1000_1001", 882, 1296],
+    ["1001_1002", 1980, 1389],
+    ["1001_1003", 1980, 1389],
+    ["1002_1004", 3084, 1803],
+    ["1003_1004", 2754, 1439],
+    ["1004_1005", 2985, 759],
+    ["1000", 726, 1437],
+    ["1001", 1467, 1026],
+    ["1002", 2436, 1864],
+    ["1003", 2448, 1416],
+    ["1004", 3159, 1485],
+    ["1005", 2562, 700],
+]
+
+for mapLink in ListPointeursContinent1:
+    newMap = imageMapContinent1.copy()
     newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
+    newMap.save('./Ressources/mapsCursed/'+mapLink[0]+'_map.jpg',quality=100)
+
+for mapLink in ListPointeursIleVolcanique:
+    newMap = imageMapIleVolcanique.copy()
+    newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
     newMap.save('./Ressources/mapsCursed/'+mapLink[0]+'_map.jpg',quality=100)
