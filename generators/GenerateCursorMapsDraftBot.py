@@ -1,7 +1,9 @@
 from PIL import Image
 
-imageMapContinent1 = Image.open('./Ressources/map.jpg')
-imageMapIleVolcanique = Image.open('./Ressources/volcano_island.jpg')
+imageMapContinentFr = Image.open('./Ressources/map_fr.jpg')
+imageMapContinentEn = Image.open('./Ressources/map_en.jpg')
+imageMapIleVolcaniqueFr = Image.open('./Ressources/volcano_island_fr.jpg')
+imageMapIleVolcaniqueEn = Image.open('./Ressources/volcano_island_en.jpg')
 imageCursor = Image.open('./Ressources/Marqueur.png')
 imageCross = Image.open('./Ressources/cross.png')
 
@@ -52,6 +54,7 @@ ListPointeursContinent1 = [
     ["22_23", 7148, 2274],
     ["21_23", 7878, 2424],
     ["18_22", 6008, 3314],
+    ["18_19", 5555, 4053],    
     ["19_21", 6688, 3764],
     ["14_25", 5354, 884],
     ["3_4", 2764, 717],
@@ -102,11 +105,17 @@ ListPointeursIleVolcanique = [
 ]
 
 for mapLink in ListPointeursContinent1:
-    newMap = imageMapContinent1.copy()
+    newMap = imageMapContinentFr.copy()
     newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
-    newMap.save('./Ressources/mapsCursed/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap.save('./Ressources/mapsCursed/fr/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap = imageMapContinentEn.copy()
+    newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
+    newMap.save('./Ressources/mapsCursed/en/'+mapLink[0]+'_map.jpg',quality=100)
 
 for mapLink in ListPointeursIleVolcanique:
-    newMap = imageMapIleVolcanique.copy()
+    newMap = imageMapIleVolcaniqueFr.copy()
     newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
-    newMap.save('./Ressources/mapsCursed/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap.save('./Ressources/mapsCursed/fr/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap = imageMapIleVolcaniqueEn.copy()
+    newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
+    newMap.save('./Ressources/mapsCursed/en/'+mapLink[0]+'_map.jpg',quality=100)
