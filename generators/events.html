@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Events generator</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+		integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="./css/code.css">
+</head>
+
+<script>
+	window.addEventListener("DOMContentLoaded", () => {
+		addChoiceTableRow();
+	});
+
+	function getNumberInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "number");
+		input.setAttribute("class", "form-control");
+		input.setAttribute("step", "1");
+		input.setAttribute("min", "0");
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
+    function getTextInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "text");
+		input.setAttribute("class", "form-control");
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
+	function getDeleteButton() {
+		const button = document.createElement("button");
+		button.setAttribute("type", "button");
+		button.setAttribute("class", "btn btn-danger");
+		button.setAttribute("onclick", "removeTableTow(this)");
+		const span = document.createElement("span");
+		span.setAttribute("aria-hidden", "true");
+		span.textContent = "×";
+		button.appendChild(span);
+		return button;
+	}
+
+	function addChoiceTableRow() {
+		const table = document.getElementById("choice-table");
+		const rowsCount = table.rows.length;
+		const tr = table.insertRow(rowsCount);
+		tr.insertCell(0).appendChild(getTextInput());
+		tr.insertCell(1).appendChild(getTextInput());
+        tr.insertCell(2).appendChild(getTextInput());
+		tr.insertCell(3).appendChild(getDeleteButton());
+		changeForm();
+	}
+
+	function removeTableTow(button) {
+		const table = document.getElementById("choice-table");
+		table.deleteRow(button.parentNode.parentNode.rowIndex);
+		changeForm();
+	}
+
+	function changeForm() {
+		document.getElementById("json").textContent = generateJson();
+		hljs.highlightAll();
+	}
+
+	function generateJson() {
+		const obj = {};
+		obj.translations = {};
+		obj.translations.fr = {};
+		obj.translations.fr.desc = document.getElementById("french-intro").value;
+		obj.translations.en = {};
+		obj.translations.en.desc = document.getElementById("english-intro").value;
+		obj.campaignOnly = document.getElementById("campaignOnly").checked;
+		if (!obj.campaignOnly) {
+			obj.difficulties = {};
+			obj.difficulties.easy = [];
+			obj.difficulties.medium = [];
+			obj.difficulties.hard = [];
+			obj.objectives = [];
+			obj.gems = [];
+			obj.xp = [];
+			obj.money = [];
+			obj.expirations = [];
+			obj.dailyIndexes = [];
+			const table = document.getElementById("choice-table");
+			for (let i = 1; i < table.rows.length; ++i) {
+				obj.objectives.push(parseInt(table.rows[i].cells[0].firstChild.value));
+				obj.gems.push(parseInt(table.rows[i].cells[1].firstChild.value));
+				obj.xp.push(parseInt(table.rows[i].cells[2].firstChild.value));
+				obj.money.push(parseInt(table.rows[i].cells[3].firstChild.value));
+				obj.expirations.push(parseInt(table.rows[i].cells[4].firstChild.value));
+				if (table.rows[i].cells[5].firstChild.checked) {
+					obj.dailyIndexes.push(i - 1);
+				}
+				switch (table.rows[i].cells[6].firstChild.selectedIndex) {
+					case 0:
+						obj.difficulties.easy.push(i - 1);
+						break;
+					case 1:
+						obj.difficulties.medium.push(i - 1);
+						break;
+					case 2:
+						obj.difficulties.hard.push(i - 1);
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		return JSON.stringify(obj, undefined, '\t');
+	}
+</script>
+
+<body>
+	<div class="container">
+		<div class="jumbotron">
+			<h1>Event generator</h1>
+			<p>Generate an event's json</p>
+		</div>
+		<form>
+			<div class="form-group">
+				<label for="french-intro">French intro</label>
+				<input type="text" class="form-control" id="french-intro" aria-describedby="french-intro-help"
+					placeholder="Enter french intro" oninput="changeForm()" autocomplete="off">
+			</div>
+			<div class="form-group">
+				<label for="english-intro">English intro</label>
+				<input type="text" class="form-control" id="english-intro" aria-describedby="english-intro-help"
+					placeholder="Enter english intro" oninput="changeForm()" autocomplete="off">
+			</div>
+            <div class="form-group">
+                <label for="map-id">map ID</label>
+                <input type="number" class="form-control" id="map-id" aria-describedby="french-intro-help"
+					placeholder="Enter map ID of the event's location" oninput="changeForm()" autocomplete="off">
+            </div>
+
+            <br />
+
+            <h2>Event's choices</h2>
+            <p>add the event's various choices</p>
+
+			<table class="table text-center" id="choice-table">
+				<thead>
+					<tr>
+						<th scope="col">Emote</th>
+						<th scope="col">French Description</th>
+						<th scope="col">English Description</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+		</form>
+		<button type="button" class="btn btn-info" onclick="addChoiceTableRow()" id="add-choice">Add a choice</button>
+		<br /><br /><br />
+		<h2>Generated JSON</h2>
+		<br />
+		<pre><code id="json"></code></pre>
+	</div>
+</body>
+
+</html>
