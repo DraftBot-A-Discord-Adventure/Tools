@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Events generator</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+		integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+	<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="./css/code.css">
+</head>
+
+<script>
+	window.addEventListener("DOMContentLoaded", () => {
+		addChoiceTableRow();
+	});
+
+    function getBoolInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "number");
+		input.setAttribute("class", "form-control");
+        input.setAttribute("step", "1");
+        input.setAttribute("min", "0");
+        input.setAttribute("max", "1");
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
+	function getNumberInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "number");
+		input.setAttribute("class", "form-control");
+		input.setAttribute("step", "1");
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
+    function getTextInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "text");
+		input.setAttribute("class", "form-control");
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
+	function getDeleteButton(onclick) {
+		const button = document.createElement("button");
+		button.setAttribute("type", "button");
+		button.setAttribute("class", "btn btn-danger");
+		button.setAttribute("onclick", onclick);
+		const span = document.createElement("span");
+		span.setAttribute("aria-hidden", "true");
+		span.textContent = "×";
+		button.appendChild(span);
+		return button;
+	}
+
+	function addChoiceTableRow() {
+		const table = document.getElementById("choice-table");
+		const rowsCount = table.rows.length;
+		const tr = table.insertRow(rowsCount);
+		tr.insertCell(0).appendChild(getTextInput());
+		tr.insertCell(1).appendChild(getTextInput());
+        tr.insertCell(2).appendChild(getTextInput());
+		tr.insertCell(3).appendChild(getDeleteButton("removeTableTow(this, 'choice-table')"));
+		changeForm();
+	}
+
+    function addOutcomeTableRow() {
+		const table = document.getElementById("outcome-table");
+		const rowsCount = table.rows.length;
+		const tr = table.insertRow(rowsCount);
+		tr.insertCell(0).appendChild(getTextInput());
+		tr.insertCell(1).appendChild(getTextInput());
+        tr.insertCell(2).appendChild(getTextInput());
+        tr.insertCell(3).appendChild(getNumberInput());
+        tr.insertCell(4).appendChild(getNumberInput());
+        tr.insertCell(5).appendChild(getTextInput());
+        tr.insertCell(6).appendChild(getNumberInput());
+        tr.insertCell(7).appendChild(getBoolInput());
+        tr.insertCell(8).appendChild(getBoolInput());
+        tr.insertCell(9).appendChild(getBoolInput());
+        tr.insertCell(10).appendChild(getDeleteButton("removeTableTow(this, 'outcome-table')"));
+
+		changeForm();
+	}
+
+	function removeTableTow(button, elem) {
+		const table = document.getElementById(elem);
+		table.deleteRow(button.parentNode.parentNode.rowIndex);
+		changeForm();
+	}
+
+	function changeForm() {
+		document.getElementById("json").textContent = generateJson();
+		hljs.highlightAll();
+	}
+
+	function generateJson() {
+		const obj = {};
+
+        obj.triggers = [{"mapId": Number(document.getElementById("map-id").value)}]
+
+		obj.translations = {};
+		obj.translations.fr = {};
+		obj.translations.fr = document.getElementById("french-intro").value;
+		obj.translations.en = {};
+		obj.translations.en = document.getElementById("english-intro").value;
+
+        const choices = document.getElementById("choice-table");
+        const outcomes = document.getElementById("outcome-table");
+
+        obj.possibilities = {};
+
+        const choices_emotes = [];
+
+        for (let i = 1; i < choices.rows.length; i++) {
+            let curr = choices.rows[i];
+
+            choices_emotes.push(curr.cells[0].firstChild.value);
+
+            obj.possibilities[curr.cells[0].firstChild.value] = {
+                "translations" : {
+                    "fr" : curr.cells[1].firstChild.value,
+                    "en" : curr.cells[2].firstChild.value
+                },
+                "outcomes" : []
+            };
+        }
+
+        obj.possibilities["end"] = {"outcomes" : []};
+
+        for (let i = 1; i < outcomes.rows.length; i++) {
+            let curr = outcomes.rows[i];
+            let emote = curr.cells[0].firstChild.value;
+
+            let outcome = {
+				"translations" : {
+					"fr" : curr.cells[1].firstChild.value,
+					"en" : curr.cells[2].firstChild.value
+				}
+			};
+
+			outcome = analyze_outcome(outcome, curr);
+
+            if (choices_emotes.includes(emote)) {
+                obj.possibilities[emote].outcomes.push(outcome);
+            } else {
+                obj.possibilities["end"].outcomes.push(outcome);
+            }
+        }
+        
+		return JSON.stringify(obj, undefined, '\t');
+	}
+
+	function analyze_outcome(outcome, curr) {
+		const possible_effects = [":sick:", ":cold_face:", ":head_bandage:", "dizzy_face:", "confounded", "lock"];
+		let timeLost = curr.cells[3].firstChild.value;
+			
+		if (timeLost > 0) {
+			outcome.timeLost = timeLost;
+			outcome.effect = ":clock2:";
+		} else {
+			let effect = curr.cells[5].firstChild.value;
+			if (possible_effects.includes(effect)) {
+				outcome.effect = effect;
+			}
+		}
+
+		let health = curr.cells[4].firstChild.value;
+
+		if (health != 0) {
+			outcome.health = health;
+		}
+
+		let money = curr.cells[6].firstChild.value;
+
+		if (money != 0) {
+			outcome.money = money;
+		}
+
+		let item = curr.cells[7].firstChild.value;
+
+		if (item == 1) {
+			outcome.item = {};
+		}
+
+		let feast = curr.cells[8].firstChild.value;
+		let alcohol = curr.cells[9].firstChild.value;
+
+		if (feast+alcohol > 0) {
+			outcome.tags = []
+		}
+		if (feast == 1) {
+			outcome.tags.push("bigFeast");
+		}
+		if (alcohol == 1) {
+			outcome.tags.push("drinkAlcohol");
+		}
+
+		return outcome;
+	}
+
+</script>
+
+<body>
+	<div class="container">
+		<div class="jumbotron">
+			<h1>Event generator</h1>
+			<p>Generate an event's json</p>
+		</div>
+		<form>
+            <div class="form-group">
+                <label for="map-id">map ID</label>
+                <input type="number" class="form-control" id="map-id"
+					placeholder="Enter map ID of the event's location" oninput="changeForm()" autocomplete="off">
+            </div>
+
+			<div class="form-group">
+				<label for="french-intro">French intro</label>
+				<input type="text" class="form-control" id="french-intro"
+					placeholder="Enter french intro" oninput="changeForm()" autocomplete="off">
+			</div>
+			<div class="form-group">
+				<label for="english-intro">English intro</label>
+				<input type="text" class="form-control" id="english-intro"
+					placeholder="Enter english intro" oninput="changeForm()" autocomplete="off">
+			</div>
+
+            <br />
+
+            <h2>Event's choices</h2>
+            <p>add the event's various choices</p>
+
+			<table class="table text-center" id="choice-table">
+				<thead>
+					<tr>
+						<th scope="col">Emote</th>
+						<th scope="col">French Description</th>
+						<th scope="col">English Description</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+
+            <button type="button" class="btn btn-info" onclick="addChoiceTableRow()" id="add-choice">Add a choice</button>
+
+            <br /><br /><br />
+            <h2>Event's outcomes</h2>
+            <p>add the outcomes to the choices</p>
+
+			<table class="table text-center" id="outcome-table">
+				<thead>
+					<tr>
+						<th scope="col">Emote</th>
+						<th scope="col">French Text</th>
+						<th scope="col">English Text</th>
+                        <th scope="col">timeLost</th>
+                        <th scope="col">health</th>
+                        <th scope="col">effect</th>
+                        <th scope="col">money</th>
+                        <th scope="col">item ?</th>
+                        <th scope="col">feast ?</th>
+                        <th scope="col">drank alcohol ?</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+
+            <button type="button" class="btn btn-info" onclick="addOutcomeTableRow()" id="add-outcome">Add an outcome</button>
+
+		</form>
+		<br /><br /><br />
+		<h2>Generated JSON</h2>
+		<br />
+		<pre><code id="json"></code></pre>
+	</div>
+</body>
+
+</html>
