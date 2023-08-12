@@ -16,12 +16,22 @@
 		addChoiceTableRow();
 	});
 
+    function getBoolInput() {
+		const input = document.createElement("input");
+		input.setAttribute("type", "number");
+		input.setAttribute("class", "form-control");
+        input.setAttribute("step", "1");
+        input.setAttribute("min", "0");
+        input.setAttribute("max", "1");
+		input.setAttribute("oninput", "changeForm()");
+		return input;
+	}
+
 	function getNumberInput() {
 		const input = document.createElement("input");
 		input.setAttribute("type", "number");
 		input.setAttribute("class", "form-control");
 		input.setAttribute("step", "1");
-		input.setAttribute("min", "0");
 		input.setAttribute("oninput", "changeForm()");
 		return input;
 	}
@@ -34,11 +44,11 @@
 		return input;
 	}
 
-	function getDeleteButton() {
+	function getDeleteButton(onclick) {
 		const button = document.createElement("button");
 		button.setAttribute("type", "button");
 		button.setAttribute("class", "btn btn-danger");
-		button.setAttribute("onclick", "removeTableTow(this)");
+		button.setAttribute("onclick", onclick);
 		const span = document.createElement("span");
 		span.setAttribute("aria-hidden", "true");
 		span.textContent = "×";
@@ -53,12 +63,31 @@
 		tr.insertCell(0).appendChild(getTextInput());
 		tr.insertCell(1).appendChild(getTextInput());
         tr.insertCell(2).appendChild(getTextInput());
-		tr.insertCell(3).appendChild(getDeleteButton());
+		tr.insertCell(3).appendChild(getDeleteButton("removeTableTow(this, 'choice-table')"));
 		changeForm();
 	}
 
-	function removeTableTow(button) {
-		const table = document.getElementById("choice-table");
+    function addOutcomeTableRow() {
+		const table = document.getElementById("outcome-table");
+		const rowsCount = table.rows.length;
+		const tr = table.insertRow(rowsCount);
+		tr.insertCell(0).appendChild(getTextInput());
+		tr.insertCell(1).appendChild(getTextInput());
+        tr.insertCell(2).appendChild(getTextInput());
+        tr.insertCell(3).appendChild(getNumberInput());
+        tr.insertCell(4).appendChild(getNumberInput());
+        tr.insertCell(5).appendChild(getTextInput());
+        tr.insertCell(6).appendChild(getNumberInput());
+        tr.insertCell(7).appendChild(getBoolInput());
+        tr.insertCell(8).appendChild(getBoolInput());
+        tr.insertCell(9).appendChild(getBoolInput());
+        tr.insertCell(10).appendChild(getDeleteButton("removeTableTow(this, 'outcome-table')"));
+
+		changeForm();
+	}
+
+	function removeTableTow(button, elem) {
+		const table = document.getElementById(elem);
 		table.deleteRow(button.parentNode.parentNode.rowIndex);
 		changeForm();
 	}
@@ -70,48 +99,51 @@
 
 	function generateJson() {
 		const obj = {};
+
+        obj.triggers = [{"mapId": Number(document.getElementById("map-id").value)}]
+
 		obj.translations = {};
 		obj.translations.fr = {};
-		obj.translations.fr.desc = document.getElementById("french-intro").value;
+		obj.translations.fr = document.getElementById("french-intro").value;
 		obj.translations.en = {};
-		obj.translations.en.desc = document.getElementById("english-intro").value;
-		obj.campaignOnly = document.getElementById("campaignOnly").checked;
-		if (!obj.campaignOnly) {
-			obj.difficulties = {};
-			obj.difficulties.easy = [];
-			obj.difficulties.medium = [];
-			obj.difficulties.hard = [];
-			obj.objectives = [];
-			obj.gems = [];
-			obj.xp = [];
-			obj.money = [];
-			obj.expirations = [];
-			obj.dailyIndexes = [];
-			const table = document.getElementById("choice-table");
-			for (let i = 1; i < table.rows.length; ++i) {
-				obj.objectives.push(parseInt(table.rows[i].cells[0].firstChild.value));
-				obj.gems.push(parseInt(table.rows[i].cells[1].firstChild.value));
-				obj.xp.push(parseInt(table.rows[i].cells[2].firstChild.value));
-				obj.money.push(parseInt(table.rows[i].cells[3].firstChild.value));
-				obj.expirations.push(parseInt(table.rows[i].cells[4].firstChild.value));
-				if (table.rows[i].cells[5].firstChild.checked) {
-					obj.dailyIndexes.push(i - 1);
-				}
-				switch (table.rows[i].cells[6].firstChild.selectedIndex) {
-					case 0:
-						obj.difficulties.easy.push(i - 1);
-						break;
-					case 1:
-						obj.difficulties.medium.push(i - 1);
-						break;
-					case 2:
-						obj.difficulties.hard.push(i - 1);
-						break;
-					default:
-						break;
-				}
-			}
-		}
+		obj.translations.en = document.getElementById("english-intro").value;
+
+        const choices = document.getElementById("choice-table");
+        const outcomes = document.getElementById("outcome-table");
+
+        obj.possibilities = {};
+
+        const choices_emotes = [];
+
+        for (let i = 1; i < choices.rows.length; i++) {
+            let curr = choices.rows[i];
+
+            choices_emotes.push(curr.cells[0].firstChild.value);
+
+            obj.possibilities[curr.cells[0].firstChild.value] = {
+                "translations" : {
+                    "fr" : curr.cells[1].firstChild.value,
+                    "en" : curr.cells[2].firstChild.value
+                },
+                "outcomes" : []
+            };
+        }
+
+        obj.possibilities["end"] = {"outcomes" : []};
+
+        for (let i = 1; i < outcomes.rows.length; i++) {
+            let curr = outcomes.rows[i];
+            let emote = curr.cells[0].firstChild.value;
+
+            let outcome = {};
+
+            if (choices_emotes.includes(emote)) {
+                obj.possibilities[emote].outcomes.push(outcome);
+            } else {
+                obj.possibilities["end"].outcomes.push(outcome);
+            }
+        }
+        
 		return JSON.stringify(obj, undefined, '\t');
 	}
 </script>
@@ -123,21 +155,22 @@
 			<p>Generate an event's json</p>
 		</div>
 		<form>
+            <div class="form-group">
+                <label for="map-id">map ID</label>
+                <input type="number" class="form-control" id="map-id"
+					placeholder="Enter map ID of the event's location" oninput="changeForm()" autocomplete="off">
+            </div>
+
 			<div class="form-group">
 				<label for="french-intro">French intro</label>
-				<input type="text" class="form-control" id="french-intro" aria-describedby="french-intro-help"
+				<input type="text" class="form-control" id="french-intro"
 					placeholder="Enter french intro" oninput="changeForm()" autocomplete="off">
 			</div>
 			<div class="form-group">
 				<label for="english-intro">English intro</label>
-				<input type="text" class="form-control" id="english-intro" aria-describedby="english-intro-help"
+				<input type="text" class="form-control" id="english-intro"
 					placeholder="Enter english intro" oninput="changeForm()" autocomplete="off">
 			</div>
-            <div class="form-group">
-                <label for="map-id">map ID</label>
-                <input type="number" class="form-control" id="map-id" aria-describedby="french-intro-help"
-					placeholder="Enter map ID of the event's location" oninput="changeForm()" autocomplete="off">
-            </div>
 
             <br />
 
@@ -155,8 +188,35 @@
 				<tbody>
 				</tbody>
 			</table>
+
+            <button type="button" class="btn btn-info" onclick="addChoiceTableRow()" id="add-choice">Add a choice</button>
+
+            <br /><br /><br />
+            <h2>Event's outcomes</h2>
+            <p>add the outcomes to the choices</p>
+
+			<table class="table text-center" id="outcome-table">
+				<thead>
+					<tr>
+						<th scope="col">Emote</th>
+						<th scope="col">French Text</th>
+						<th scope="col">English Text</th>
+                        <th scope="col">timeLost</th>
+                        <th scope="col">health</th>
+                        <th scope="col">effect</th>
+                        <th scope="col">money</th>
+                        <th scope="col">item ?</th>
+                        <th scope="col">feast ?</th>
+                        <th scope="col">drank alcohol ?</th>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+
+            <button type="button" class="btn btn-info" onclick="addOutcomeTableRow()" id="add-outcome">Add an outcome</button>
+
 		</form>
-		<button type="button" class="btn btn-info" onclick="addChoiceTableRow()" id="add-choice">Add a choice</button>
 		<br /><br /><br />
 		<h2>Generated JSON</h2>
 		<br />
