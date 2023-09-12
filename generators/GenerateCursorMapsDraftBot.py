@@ -107,15 +107,15 @@ ListPointeursIleVolcanique = [
 for mapLink in ListPointeursContinent1:
     newMap = imageMapContinentFr.copy()
     newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
-    newMap.save('./Ressources/mapsCursed/fr/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap.save('./Ressources/mapsCursed/fr_'+mapLink[0]+'_map.jpg',quality=100)
     newMap = imageMapContinentEn.copy()
     newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
-    newMap.save('./Ressources/mapsCursed/en/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap.save('./Ressources/mapsCursed/en_'+mapLink[0]+'_map.jpg',quality=100)
 
 for mapLink in ListPointeursIleVolcanique:
     newMap = imageMapIleVolcaniqueFr.copy()
     newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
-    newMap.save('./Ressources/mapsCursed/fr/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap.save('./Ressources/mapsCursed/fr_'+mapLink[0]+'_map.jpg',quality=100)
     newMap = imageMapIleVolcaniqueEn.copy()
     newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
-    newMap.save('./Ressources/mapsCursed/en/'+mapLink[0]+'_map.jpg',quality=100)
+    newMap.save('./Ressources/mapsCursed/en_'+mapLink[0]+'_map.jpg',quality=100)
