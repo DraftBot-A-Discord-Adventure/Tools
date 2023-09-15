@@ -109,7 +109,8 @@ for mapLink in ListPointeursContinent1:
     newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
     newMap.save('./Ressources/mapsCursed/fr_'+mapLink[0]+'_map.jpg',quality=100)
     newMap = imageMapContinentEn.copy()
-    newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
+    resizedCursor = imageCursor.resize((round(imageCursor.width/2), round(imageCursor.height/2)))
+    newMap.paste(resizedCursor, (round(mapLink[1]/2), round(mapLink[2]/2)), resizedCursor)
     newMap.save('./Ressources/mapsCursed/en_'+mapLink[0]+'_map.jpg',quality=100)
 
 for mapLink in ListPointeursIleVolcanique:
