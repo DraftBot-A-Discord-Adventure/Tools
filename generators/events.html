@@ -16,6 +16,21 @@
 		addChoiceTableRow();
 	});
 
+	const possible_effects = {
+		NONE : "",
+		SLEEPING : ":sleeping:", 
+		DRUNK : ":zany_face:", 
+		FROZEN: ":cold_face:",
+		HURT : ":head_bandage:",
+		SICK : ":sick:",
+		LOCKED : ":lock:",
+		INJURED : ":dizzy_face:",
+		STARVING : ":drooling_face:",
+		CONFOUNDED : ":confounded:",
+		LOST : ":face_with_monocle:",
+		SCARED : ":scream:"
+	};
+
     function getBoolInput() {
 		const input = document.createElement("input");
 		input.setAttribute("type", "number");
@@ -42,6 +57,18 @@
 		input.setAttribute("class", "form-control");
 		input.setAttribute("oninput", "changeForm()");
 		return input;
+	}
+
+	function getEffectsSelect() {
+		const select = document.createElement("select");
+		for (var e of Object.keys(possible_effects)) {
+			var option = document.createElement("option");
+			option.setAttribute("value",e);
+			option.text = e;
+			select.appendChild(option);
+		}
+		select.setAttribute("onchange","changeForm()");
+		return select;
 	}
 
 	function getDeleteButton(onclick) {
@@ -76,7 +103,7 @@
         tr.insertCell(2).appendChild(getTextInput());
         tr.insertCell(3).appendChild(getNumberInput());
         tr.insertCell(4).appendChild(getNumberInput());
-        tr.insertCell(5).appendChild(getTextInput());
+        tr.insertCell(5).appendChild(getEffectsSelect());
         tr.insertCell(6).appendChild(getNumberInput());
         tr.insertCell(7).appendChild(getBoolInput());
         tr.insertCell(8).appendChild(getBoolInput());
@@ -155,7 +182,7 @@
 	}
 
 	function analyze_outcome(outcome, curr) {
-		const possible_effects = [":sick:", ":cold_face:", ":head_bandage:", "dizzy_face:", "confounded", "lock"];
+		
 		let lostTime = curr.cells[3].firstChild.value;
 			
 		if (lostTime > 0) {
@@ -163,8 +190,9 @@
 			outcome.effect = ":clock2:";
 		} else {
 			let effect = curr.cells[5].firstChild.value;
-			if (possible_effects.includes(effect)) {
-				outcome.effect = effect;
+			if (Object.keys(possible_effects).includes(effect)) {
+				if (effect != "NONE")
+				outcome.effect = possible_effects[effect];
 			}
 		}
 
