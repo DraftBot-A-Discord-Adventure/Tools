@@ -156,10 +156,10 @@
 
 	function analyze_outcome(outcome, curr) {
 		const possible_effects = [":sick:", ":cold_face:", ":head_bandage:", "dizzy_face:", "confounded", "lock"];
-		let timeLost = curr.cells[3].firstChild.value;
+		let lostTime = curr.cells[3].firstChild.value;
 			
-		if (timeLost > 0) {
-			outcome.timeLost = timeLost;
+		if (lostTime > 0) {
+			outcome.lostTime = parseInt(lostTime);
 			outcome.effect = ":clock2:";
 		} else {
 			let effect = curr.cells[5].firstChild.value;
@@ -171,19 +171,19 @@
 		let health = curr.cells[4].firstChild.value;
 
 		if (health != 0) {
-			outcome.health = health;
+			outcome.health = parseInt(health);
 		}
 
 		let money = curr.cells[6].firstChild.value;
 
 		if (money != 0) {
-			outcome.money = money;
+			outcome.money = parseInt(money);
 		}
 
-		let item = curr.cells[7].firstChild.value;
+		let randomItem = curr.cells[7].firstChild.value;
 
-		if (item == 1) {
-			outcome.item = {};
+		if (randomItem == 1) {
+			outcome.randomItem = {};
 		}
 
 		let feast = curr.cells[8].firstChild.value;
@@ -257,11 +257,11 @@
 						<th scope="col">Emote</th>
 						<th scope="col">French Text</th>
 						<th scope="col">English Text</th>
-                        <th scope="col">timeLost</th>
+                        <th scope="col">lostTime</th>
                         <th scope="col">health</th>
                         <th scope="col">effect</th>
                         <th scope="col">money</th>
-                        <th scope="col">item ?</th>
+                        <th scope="col">randomItem ?</th>
                         <th scope="col">feast ?</th>
                         <th scope="col">drank alcohol ?</th>
 					</tr>
