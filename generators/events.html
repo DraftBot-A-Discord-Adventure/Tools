@@ -31,13 +31,10 @@
 		SCARED : ":scream:"
 	};
 
-    function getBoolInput() {
+	function getBoolInput() {
 		const input = document.createElement("input");
-		input.setAttribute("type", "number");
-		input.setAttribute("class", "form-control");
-        input.setAttribute("step", "1");
-        input.setAttribute("min", "0");
-        input.setAttribute("max", "1");
+		input.setAttribute("type", "checkbox");
+		input.setAttribute("class","form-control")
 		input.setAttribute("oninput", "changeForm()");
 		return input;
 	}
@@ -208,22 +205,22 @@
 			outcome.money = parseInt(money);
 		}
 
-		let randomItem = curr.cells[7].firstChild.value;
+		let randomItem = curr.cells[7].firstChild;
 
-		if (randomItem == 1) {
+		if (randomItem.checked) {
 			outcome.randomItem = {};
 		}
 
-		let feast = curr.cells[8].firstChild.value;
-		let alcohol = curr.cells[9].firstChild.value;
+		let feast = curr.cells[8].firstChild;
+		let alcohol = curr.cells[9].firstChild;
 
-		if (feast+alcohol > 0) {
+		if (feast.checked || alcohol.checked) {
 			outcome.tags = []
 		}
-		if (feast == 1) {
+		if (feast.checked) {
 			outcome.tags.push("bigFeast");
 		}
-		if (alcohol == 1) {
+		if (alcohol.checked) {
 			outcome.tags.push("drinkAlcohol");
 		}
 
