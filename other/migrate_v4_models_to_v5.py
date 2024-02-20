@@ -74,9 +74,33 @@ def processPets(data, filename, finalJson):
     ret["female"] = data["translations"][lang]["femaleName"]
     return ret
 
+eventsEmotes = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'v4-to-v5-events-emojis.json')))
+
+def processEvents(data, filename, finalJson):
+    ret = {}
+    ret["text"] = data["translations"][lang].split(" ", 1)[1]
+    ret["possibilities"] = {}
+    for possibilityKey in data["possibilities"]:
+        if possibilityKey != "end":
+            possibilityName = eventsEmotes[filename][possibilityKey]
+        else:
+            possibilityName = "end"
+        ret["possibilities"][possibilityName] = {}
+        if possibilityKey != "end":
+            ret["possibilities"][possibilityName]["text"] = data["possibilities"][possibilityKey]["translations"][lang]
+        ret["possibilities"][possibilityName]["outcomes"] = {}
+        for i in range(0, len(data["possibilities"][possibilityKey]["outcomes"])):
+            outcome = data["possibilities"][possibilityKey]["outcomes"][i]
+            if possibilityKey != "end":
+                ret["possibilities"][possibilityName]["outcomes"][str(i)] = outcome["translations"][lang]
+            else:
+                ret["possibilities"][possibilityKey]["outcomes"][str(i)] = outcome["translations"][lang].split(" ", 1)[1]
+    return ret
+
 jsonObj = {}
 jsonObj["armors"] = processDir("armors", lambda data, filename, finalJson: data["translations"][lang])
 jsonObj["classes"] = processDir("classes", lambda data, filename, finalJson: data["translations"][lang].split(" ", 1)[1])
+jsonObj["events"] = processDir("events", processEvents)
 jsonObj["fight_actions"] = processDir("fightactions", processFightAction)
 jsonObj["leagues"] = processDir("leagues", lambda data, filename, finalJson: data["translations"][lang])
 jsonObj["map_locations"] = processDir("maplocations", processMapLocations)
