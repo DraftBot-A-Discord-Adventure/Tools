@@ -41,5 +41,15 @@ def processEvents(data, filename, finalJson):
 jsonObj = {}
 jsonObj["events"] = processDir("events", processEvents)
 
+# Map types
+mapTypes = {}
+filePath = os.path.join(resourceDir, "models", "maps.json")
+with open(filePath, encoding="utf-8") as fh:
+    loadedJson = json.load(fh)
+    typesSection = loadedJson["translations"]["fr"]["types"]
+    for mapType in typesSection.keys():
+        mapTypes[mapType] = typesSection[mapType]["emote"]
+jsonObj["map_types"] = mapTypes
+
 print(json.dumps(jsonObj, ensure_ascii=False, indent=4, sort_keys=True))
 
