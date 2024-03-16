@@ -12,6 +12,7 @@ if not os.path.exists(resourceDir) or not os.path.isdir(resourceDir):
     print(f"'{resourceDir}' is not a directory")
     exit(1)
 
+
 def processDir(dirName, processJson):
     finalJson = {}
     dirPath = os.path.join(resourceDir, dirName)
@@ -25,7 +26,9 @@ def processDir(dirName, processJson):
                     finalJson[filename[:-5]] = ret
     return finalJson
 
+
 eventsEmotes = json.load(open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'v4-to-v5-events-emojis.json')))
+
 
 def processEvents(data, filename, finalJson):
     ret = {}
@@ -38,8 +41,17 @@ def processEvents(data, filename, finalJson):
             ret[eventsEmotes[filename][possibilityEmote]] = possibilityEmote
     return ret
 
+
+def processPets(data, filename, finalJson):
+    ret = {}
+    ret["emoteMale"] = data["emoteMale"]
+    ret["emoteFemale"] = data["emoteFemale"]
+    return ret
+
+
 jsonObj = {}
-jsonObj["events"] = processDir("events", processEvents)
+# jsonObj["events"] = processDir("events", processEvents)
+jsonObj["pets"] = processDir("pets", processPets)
 
 # Map types
 mapTypes = {}
@@ -52,4 +64,3 @@ with open(filePath, encoding="utf-8") as fh:
 jsonObj["map_types"] = mapTypes
 
 print(json.dumps(jsonObj, ensure_ascii=False, indent=4, sort_keys=True))
-
