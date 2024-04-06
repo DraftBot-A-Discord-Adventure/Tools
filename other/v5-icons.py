@@ -48,10 +48,13 @@ def processPets(data, filename, finalJson):
     ret["emoteFemale"] = data["emoteFemale"]
     return ret
 
+def processSmallEvents(data, filename, finalJson):
+    return data["emote"]
 
 jsonObj = {}
 # jsonObj["events"] = processDir("events", processEvents)
 jsonObj["pets"] = processDir("pets", processPets)
+jsonObj["smallEvents"] = processDir("smallEvents", processSmallEvents)
 
 # Map types
 mapTypes = {}
