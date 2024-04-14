@@ -52,9 +52,9 @@ def processSmallEvents(data, filename, finalJson):
     return data["emote"]
 
 jsonObj = {}
-# jsonObj["events"] = processDir("events", processEvents)
+jsonObj["events"] = processDir("events", processEvents)
 jsonObj["pets"] = processDir("pets", processPets)
-jsonObj["smallEvents"] = processDir("smallEvents", processSmallEvents)
+jsonObj["small_events"] = processDir("smallEvents", processSmallEvents)
 
 # Map types
 mapTypes = {}
