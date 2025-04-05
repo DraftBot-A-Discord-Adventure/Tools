@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to CSV Converter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .file-input-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        .preview-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON to CSV Converter</h1>
+        
+        <div class="file-input-container">
+            <input type="file" id="fileInput" accept=".json" multiple>
+            <p>Select multiple JSON files to convert to CSV</p>
+        </div>
+        
+        <div id="status" class="status info">Ready to import JSON files.</div>
+        
+        <div class="preview-container">
+            <table id="previewTable">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>emote</th>
+                        <th>rarity</th>
+                        <th>rawAttack</th>
+                        <th>rawDefense</th>
+                        <th>rawSpeed</th>
+                        <th>attack</th>
+                        <th>defense</th>
+                        <th>speed</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Data will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="text-align: center;">
+            <button id="downloadBtn" class="button" disabled>Download CSV</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const tableBody = document.getElementById('tableBody');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const statusDiv = document.getElementById('status');
+            
+            // Store all the data
+            let allData = [];
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            downloadBtn.addEventListener('click', generateAndDownloadCSV);
+            
+            function handleFileSelect(event) {
+                const files = event.target.files;
+                
+                if (files.length === 0) {
+                    showStatus('No files selected.', 'error');
+                    return;
+                }
+                
+                // Reset data
+                allData = [];
+                tableBody.innerHTML = '';
+                downloadBtn.disabled = true;
+                
+                showStatus(`Processing ${files.length} files...`, 'info');
+                
+                let filesProcessed = 0;
+                
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        try {
+                            const jsonData = JSON.parse(e.target.result);
+                            
+                            // Add filename to data
+                            const fileData = {
+                                filename: file.name,
+                                ...jsonData
+                            };
+                            
+                            allData.push(fileData);
+                            addRowToTable(fileData);
+                            
+                            filesProcessed++;
+                            if (filesProcessed === files.length) {
+                                showStatus(`Successfully loaded ${files.length} files.`, 'success');
+                                downloadBtn.disabled = false;
+                            }
+                        } catch (error) {
+                            showStatus(`Error processing ${file.name}: ${error.message}`, 'error');
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        showStatus(`Error reading ${file.name}.`, 'error');
+                    };
+                    
+                    reader.readAsText(file);
+                });
+            }
+            
+            function addRowToTable(data) {
+                const row = document.createElement('tr');
+                
+                // Create cells in a specific order
+                const cells = [
+                    createTableCell(data.filename),
+                    createTableCell(data.emote),
+                    createTableCell(data.rarity),
+                    createTableCell(data.rawAttack),
+                    createTableCell(data.rawDefense),
+                    createTableCell(data.rawSpeed),
+                    createTableCell(data.attack),
+                    createTableCell(data.defense),
+                    createTableCell(data.speed)
+                ];
+                
+                cells.forEach(cell => row.appendChild(cell));
+                tableBody.appendChild(row);
+            }
+            
+            function createTableCell(value) {
+                const cell = document.createElement('td');
+                cell.textContent = value !== undefined ? value : '';
+                return cell;
+            }
+            
+            function generateAndDownloadCSV() {
+                if (allData.length === 0) {
+                    showStatus('No data to export.', 'error');
+                    return;
+                }
+                
+                // Define columns in a specific order
+                const columns = [
+                    'filename', 'emote', 'rarity', 'rawAttack', 'rawDefense', 
+                    'rawSpeed', 'attack', 'defense', 'speed'
+                ];
+                
+                // Create CSV header
+                let csvContent = columns.join(',') + '\n';
+                
+                // Add data rows
+                allData.forEach(data => {
+                    const row = columns.map(column => {
+                        const value = data[column];
+                        
+                        // Handle string values that might contain commas
+                        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                            return `"${value.replace(/"/g, '""')}"`;
+                        }
+                        
+                        return value !== undefined ? value : '';
+                    });
+                    
+                    csvContent += row.join(',') + '\n';
+                });
+                
+                // Create and download the file
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                
+                if (navigator.msSaveBlob) { // IE 10+
+                    navigator.msSaveBlob(blob, 'data.csv');
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    link.href = url;
+                    link.setAttribute('download', 'data.csv');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+                
+                showStatus('CSV file generated and downloaded!', 'success');
+            }
+            
+            function showStatus(message, type) {
+                statusDiv.textContent = message;
+                statusDiv.className = `status ${type}`;
+            }
+        });
+    </script>
+</body>
+</html>
