@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON to CSV Converter</title>
+    <title>Convertisseur JSON vers CSV</title>
     <style>
         * {
             box-sizing: border-box;
@@ -59,6 +59,10 @@
             padding: 8px;
             text-align: left;
             border-bottom: 1px solid #ddd;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         th {
             background-color: #f2f2f2;
@@ -68,6 +72,7 @@
         .preview-container {
             max-height: 400px;
             overflow-y: auto;
+            overflow-x: auto;
             margin: 20px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -89,54 +94,56 @@
             background-color: #d1ecf1;
             color: #0c5460;
         }
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>JSON to CSV Converter</h1>
+        <h1>Convertisseur JSON vers CSV</h1>
         
         <div class="file-input-container">
             <input type="file" id="fileInput" accept=".json" multiple>
-            <p>Select multiple JSON files to convert to CSV</p>
+            <p>Sélectionnez plusieurs fichiers JSON à convertir en CSV</p>
         </div>
         
-        <div id="status" class="status info">Ready to import JSON files.</div>
+        <div id="status" class="status info">Prêt à importer des fichiers JSON.</div>
         
         <div class="preview-container">
             <table id="previewTable">
-                <thead>
+                <thead id="tableHead">
                     <tr>
-                        <th>Filename</th>
-                        <th>emote</th>
-                        <th>rarity</th>
-                        <th>rawAttack</th>
-                        <th>rawDefense</th>
-                        <th>rawSpeed</th>
-                        <th>attack</th>
-                        <th>defense</th>
-                        <th>speed</th>
+                        <!-- Les en-têtes seront générés dynamiquement -->
                     </tr>
                 </thead>
                 <tbody id="tableBody">
-                    <!-- Data will be inserted here -->
+                    <tr>
+                        <td colspan="100%" class="no-data">Aucune donnée importée</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
         
         <div style="text-align: center;">
-            <button id="downloadBtn" class="button" disabled>Download CSV</button>
+            <button id="downloadBtn" class="button" disabled>Télécharger CSV</button>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('fileInput');
+            const tableHead = document.getElementById('tableHead');
             const tableBody = document.getElementById('tableBody');
             const downloadBtn = document.getElementById('downloadBtn');
             const statusDiv = document.getElementById('status');
             
-            // Store all the data
+            // Store all the data and columns
             let allData = [];
+            let allColumns = new Set(['filename']); // Always include filename
             
             fileInput.addEventListener('change', handleFileSelect);
             downloadBtn.addEventListener('click', generateAndDownloadCSV);
@@ -145,16 +152,18 @@
                 const files = event.target.files;
                 
                 if (files.length === 0) {
-                    showStatus('No files selected.', 'error');
+                    showStatus('Aucun fichier sélectionné.', 'error');
                     return;
                 }
                 
                 // Reset data
                 allData = [];
+                allColumns = new Set(['filename']);
+                tableHead.querySelector('tr').innerHTML = '';
                 tableBody.innerHTML = '';
                 downloadBtn.disabled = true;
                 
-                showStatus(`Processing ${files.length} files...`, 'info');
+                showStatus(`Traitement de ${files.length} fichiers...`, 'info');
                 
                 let filesProcessed = 0;
                 
@@ -171,79 +180,130 @@
                                 ...jsonData
                             };
                             
+                            // Collect all unique column names
+                            Object.keys(fileData).forEach(key => allColumns.add(key));
+                            
                             allData.push(fileData);
-                            addRowToTable(fileData);
                             
                             filesProcessed++;
                             if (filesProcessed === files.length) {
-                                showStatus(`Successfully loaded ${files.length} files.`, 'success');
+                                // After processing all files, update the UI
+                                updateTableHeaders();
+                                updateTableData();
+                                showStatus(`${files.length} fichiers chargés avec succès.`, 'success');
                                 downloadBtn.disabled = false;
                             }
                         } catch (error) {
-                            showStatus(`Error processing ${file.name}: ${error.message}`, 'error');
+                            showStatus(`Erreur lors du traitement de ${file.name}: ${error.message}`, 'error');
                         }
                     };
                     
                     reader.onerror = function() {
-                        showStatus(`Error reading ${file.name}.`, 'error');
+                        showStatus(`Erreur de lecture de ${file.name}.`, 'error');
                     };
                     
                     reader.readAsText(file);
                 });
             }
             
-            function addRowToTable(data) {
-                const row = document.createElement('tr');
+            function updateTableHeaders() {
+                const headerRow = tableHead.querySelector('tr');
+                headerRow.innerHTML = '';
                 
-                // Create cells in a specific order
-                const cells = [
-                    createTableCell(data.filename),
-                    createTableCell(data.emote),
-                    createTableCell(data.rarity),
-                    createTableCell(data.rawAttack),
-                    createTableCell(data.rawDefense),
-                    createTableCell(data.rawSpeed),
-                    createTableCell(data.attack),
-                    createTableCell(data.defense),
-                    createTableCell(data.speed)
-                ];
+                // Convert Set to Array and sort
+                const sortedColumns = Array.from(allColumns).sort((a, b) => {
+                    // Ensure 'filename' is always first
+                    if (a === 'filename') return -1;
+                    if (b === 'filename') return 1;
+                    return a.localeCompare(b);
+                });
                 
-                cells.forEach(cell => row.appendChild(cell));
-                tableBody.appendChild(row);
+                // Create header cells
+                sortedColumns.forEach(column => {
+                    const th = document.createElement('th');
+                    th.textContent = column;
+                    headerRow.appendChild(th);
+                });
             }
             
-            function createTableCell(value) {
-                const cell = document.createElement('td');
-                cell.textContent = value !== undefined ? value : '';
-                return cell;
+            function updateTableData() {
+                tableBody.innerHTML = '';
+                
+                if (allData.length === 0) {
+                    const row = document.createElement('tr');
+                    const cell = document.createElement('td');
+                    cell.textContent = 'Aucune donnée importée';
+                    cell.className = 'no-data';
+                    cell.setAttribute('colspan', '100%');
+                    row.appendChild(cell);
+                    tableBody.appendChild(row);
+                    return;
+                }
+                
+                const sortedColumns = Array.from(allColumns).sort((a, b) => {
+                    // Ensure 'filename' is always first
+                    if (a === 'filename') return -1;
+                    if (b === 'filename') return 1;
+                    return a.localeCompare(b);
+                });
+                
+                allData.forEach(data => {
+                    const row = document.createElement('tr');
+                    
+                    sortedColumns.forEach(column => {
+                        const cell = document.createElement('td');
+                        const value = data[column];
+                        
+                        // Format the value for display
+                        if (value === undefined || value === null) {
+                            cell.textContent = '';
+                        } else if (typeof value === 'object') {
+                            cell.textContent = JSON.stringify(value);
+                        } else {
+                            cell.textContent = value;
+                        }
+                        
+                        row.appendChild(cell);
+                    });
+                    
+                    tableBody.appendChild(row);
+                });
             }
             
             function generateAndDownloadCSV() {
                 if (allData.length === 0) {
-                    showStatus('No data to export.', 'error');
+                    showStatus('Aucune donnée à exporter.', 'error');
                     return;
                 }
                 
-                // Define columns in a specific order
-                const columns = [
-                    'filename', 'emote', 'rarity', 'rawAttack', 'rawDefense', 
-                    'rawSpeed', 'attack', 'defense', 'speed'
-                ];
+                // Get sorted columns
+                const sortedColumns = Array.from(allColumns).sort((a, b) => {
+                    // Ensure 'filename' is always first
+                    if (a === 'filename') return -1;
+                    if (b === 'filename') return 1;
+                    return a.localeCompare(b);
+                });
                 
                 // Create CSV header
-                let csvContent = columns.join(',') + '\n';
+                let csvContent = sortedColumns.join(',') + '\n';
                 
                 // Add data rows
                 allData.forEach(data => {
-                    const row = columns.map(column => {
+                    const row = sortedColumns.map(column => {
                         const value = data[column];
                         
-                        // Handle string values that might contain commas
-                        if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                        if (value === undefined || value === null) {
+                            return '';
+                        } else if (typeof value === 'object') {
+                            // Stringify objects and escape quotes
+                            const jsonString = JSON.stringify(value);
+                            return `"${jsonString.replace(/"/g, '""')}"`;
+                        } else if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                            // Handle string values that might contain commas
                             return `"${value.replace(/"/g, '""')}"`;
+                        } else {
+                            return value;
                         }
-                        
-                        return value !== undefined ? value : '';
                     });
                     
                     csvContent += row.join(',') + '\n';
@@ -252,19 +312,21 @@
                 // Create and download the file
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `export-${timestamp}.csv`;
                 
                 if (navigator.msSaveBlob) { // IE 10+
-                    navigator.msSaveBlob(blob, 'data.csv');
+                    navigator.msSaveBlob(blob, filename);
                 } else {
                     const url = URL.createObjectURL(blob);
                     link.href = url;
-                    link.setAttribute('download', 'data.csv');
+                    link.setAttribute('download', filename);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
                 }
                 
-                showStatus('CSV file generated and downloaded!', 'success');
+                showStatus('Fichier CSV généré et téléchargé !', 'success');
             }
             
             function showStatus(message, type) {
