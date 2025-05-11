@@ -4,6 +4,8 @@ imageMapContinentFr = Image.open('./Ressources/map_fr.jpg')
 imageMapContinentEn = Image.open('./Ressources/map_en.jpg')
 imageMapIleVolcaniqueFr = Image.open('./Ressources/volcano_island_fr.jpg')
 imageMapIleVolcaniqueEn = Image.open('./Ressources/volcano_island_en.jpg')
+imageMapIleGlaceExterieurFr = Image.open('./Ressources/ice_island_exterior_fr.jpg')
+imageMapIleGlaceInterieurFr = Image.open('./Ressources/ice_island_interior_fr.jpg')
 imageCursor = Image.open('./Ressources/Marqueur.png')
 imageCross = Image.open('./Ressources/cross.png')
 
@@ -54,7 +56,7 @@ ListPointeursContinent1 = [
     ["22_23", 7148, 2274],
     ["21_23", 7878, 2424],
     ["18_22", 6008, 3314],
-    ["18_19", 5555, 4053],    
+    ["18_19", 5555, 4053],
     ["19_21", 6688, 3764],
     ["14_25", 5354, 884],
     ["3_4", 2764, 717],
@@ -101,9 +103,31 @@ ListPointeursIleVolcanique = [
     ["1002", 2436, 1864],
     ["1003", 2448, 1416],
     ["1004", 3159, 1485],
-    ["1005", 2562, 700],
+    ["1005", 2562, 700]
 ]
 
+ListPointeursIleGlaceExterieur = [
+    ["1100_1101", 1196, 2217],
+    ["1101_1102", 1617, 1850],
+    ["1102_1103", 2350, 858],
+    ["1103_1104", 2488, 526],
+    ["1100", 968, 2542],
+    ["1101", 1335, 2060],
+    ["1103", 2454, 697],
+    ["1104", 2513, 392]
+]
+
+ListPointeursIleGlaceInterieur = [
+    ["1102_1105", 1189, 1003],
+    ["1105_1106", 1643, 1244],
+    ["1106_1107", 1885, 1432],
+    ["1102", 1030, 788],
+    ["1105", 1490, 1160],
+    ["1106", 1768, 1358],
+    ["1107", 1980, 1481]
+]
+
+'''
 for mapLink in ListPointeursContinent1:
     newMap = imageMapContinentFr.copy()
     newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
@@ -112,11 +136,15 @@ for mapLink in ListPointeursContinent1:
     resizedCursor = imageCursor.resize((round(imageCursor.width/2), round(imageCursor.height/2)))
     newMap.paste(resizedCursor, (round(mapLink[1]/2), round(mapLink[2]/2)), resizedCursor)
     newMap.save('./Ressources/mapsCursed/en_'+mapLink[0]+'_map.jpg',quality=100)
+'''
 
-for mapLink in ListPointeursIleVolcanique:
-    newMap = imageMapIleVolcaniqueFr.copy()
-    newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
-    newMap.save('./Ressources/mapsCursed/fr_'+mapLink[0]+'_map.jpg',quality=100)
-    newMap = imageMapIleVolcaniqueEn.copy()
-    newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
-    newMap.save('./Ressources/mapsCursed/en_'+mapLink[0]+'_map.jpg',quality=100)
+def generateIslandMaps(imageMap, ListPointeurs, lang):
+    for mapLink in ListPointeurs:
+        newMap = imageMap.copy()
+        newMap.paste(imageCross, (mapLink[1] - imageCrossCenter[0], mapLink[2] - imageCrossCenter[1]), imageCross)
+        newMap.save(f'./Ressources/mapsCursed/{lang}_{mapLink[0]}_map.jpg',quality=100)
+
+generateIslandMaps(imageMapIleVolcaniqueFr, ListPointeursIleVolcanique, 'fr')
+generateIslandMaps(imageMapIleVolcaniqueEn, ListPointeursIleVolcanique, 'en')
+generateIslandMaps(imageMapIleGlaceExterieurFr, ListPointeursIleGlaceExterieur, 'fr')
+generateIslandMaps(imageMapIleGlaceInterieurFr, ListPointeursIleGlaceInterieur, 'fr')
