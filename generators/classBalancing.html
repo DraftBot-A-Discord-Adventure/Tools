@@ -139,6 +139,23 @@
             cursor: not-allowed;
         }
         
+        .btn-base {
+            background-color: #28a745;
+        }
+        
+        .btn-base:hover {
+            background-color: #218838;
+        }
+        
+        .btn-compare {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-compare:hover {
+            background-color: #e0a800;
+        }
+        
         .table-container {
             overflow-x: auto;
             margin-top: 20px;
@@ -184,12 +201,28 @@
             background-color: #f0f8e8;
         }
         
+        .comparison-values {
+            background-color: #f8f9fa;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
         input[type="number"].table-input {
             width: 60px;
             padding: 4px;
             border: 1px solid #ddd;
             border-radius: 2px;
             text-align: center;
+        }
+        
+        .calculated-display {
+            width: 60px;
+            padding: 4px;
+            text-align: center;
+            font-weight: bold;
+            color: #495057;
+            background-color: transparent;
+            border: none;
         }
         
         .tier-header {
@@ -219,6 +252,56 @@
         .hide-breath .breath-column {
             display: none;
         }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .status-message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+            background-color: #cce7ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+        
+        /* Comparison value styling */
+        .diff-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .diff-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .diff-neutral {
+            color: #6c757d;
+        }
+        
+        .comparison-cell {
+            font-size: 11px;
+            padding: 4px;
+        }
     </style>
 </head>
 <body>
@@ -229,6 +312,7 @@
             <div class="upload-section">
                 <input type="file" id="fileInput" multiple accept=".json">
                 <button onclick="loadFiles()">Load JSON Files</button>
+                <button class="btn-base" onclick="loadBaseVersions()">Load Base Versions</button>
             </div>
             
             <div class="level-section">
@@ -251,6 +335,7 @@
                         <span class="slider"></span>
                     </label>
                 </div>
+                <button class="btn-compare" onclick="compareWithBase()" id="compareBtn" disabled>Compare with Base</button>
             </div>
             
             <div class="download-section">
@@ -258,6 +343,8 @@
                 <button onclick="downloadSelected()" disabled id="downloadSelectedBtn">Download Selected</button>
             </div>
         </div>
+        
+        <div id="statusMessages"></div>
         
         <div class="table-container" id="tableContainer">
             <table id="classTable" style="display: none;">
@@ -279,12 +366,18 @@
                 </tbody>
             </table>
             <div id="noDataMessage" class="no-data">
-                Upload JSON files to begin editing
+                Upload JSON files or load base versions to begin editing
             </div>
         </div>
     </div>
 
     <script>
+        // GitHub API configuration
+        const GITHUB_API_BASE = 'https://api.github.com';
+        const REPO_OWNER = 'DraftBot-A-Discord-Adventure';
+        const REPO_NAME = 'DraftBot';
+        const CLASSES_PATH = 'Core/resources/classes';
+        
         // Class name mapping
         const classNames = {
             0: "Recrue 🌿",
@@ -324,6 +417,8 @@
         };
 
         let classData = {};
+        let baseClassData = {};
+        let isComparingWithBase = false;
 
         // Calculation functions
         function getAttackValue(baseAttack, level) {
@@ -346,16 +441,146 @@
             return baseHealth + level;
         }
 
-        // Reverse calculation functions
-        function getBaseFromCalculated(calculatedValue, baseValue, level, type) {
-            if (type === 'health') {
-                return calculatedValue - level;
-            } else if (type === 'fightPoint') {
-                return calculatedValue - (1600 / (1 + Math.exp(-0.06 * level + 2)) + 0.5 * level);
+        function showStatus(message, type = 'info') {
+            const statusContainer = document.getElementById('statusMessages');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusContainer.appendChild(statusDiv);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.parentNode.removeChild(statusDiv);
+                }
+            }, 5000);
+        }
+
+        function clearStatus() {
+            document.getElementById('statusMessages').innerHTML = '';
+        }
+
+        async function loadBaseVersions() {
+            try {
+                showStatus('Loading base versions from GitHub...', 'info');
+                document.body.classList.add('loading');
+                
+                // Get list of class files
+                const response = await fetch(`${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CLASSES_PATH}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch file list: ${response.statusText}`);
+                }
+                
+                const files = await response.json();
+                const jsonFiles = files.filter(file => file.name.endsWith('.json'));
+                
+                baseClassData = {};
+                classData = {};
+                
+                // Load each JSON file
+                for (const file of jsonFiles) {
+                    const fileResponse = await fetch(file.download_url);
+                    if (!fileResponse.ok) {
+                        console.warn(`Failed to load ${file.name}: ${fileResponse.statusText}`);
+                        continue;
+                    }
+                    
+                    const data = await fileResponse.json();
+                    const classId = parseInt(file.name.replace('.json', ''));
+                    
+                    baseClassData[classId] = { ...data };
+                    classData[classId] = {
+                        ...data,
+                        fileName: file.name,
+                        isBaseVersion: true
+                    };
+                }
+                
+                document.body.classList.remove('loading');
+                showStatus(`Loaded ${Object.keys(classData).length} base class files from GitHub`, 'success');
+                
+                // Enable compare button
+                document.getElementById('compareBtn').disabled = false;
+                
+                renderTable();
+            } catch (error) {
+                document.body.classList.remove('loading');
+                showStatus(`Error loading base versions: ${error.message}`, 'error');
+                console.error('Error loading base versions:', error);
+            }
+        }
+
+        function compareWithBase() {
+            if (Object.keys(baseClassData).length === 0) {
+                showStatus('No base versions loaded. Click "Load Base Versions" first.', 'error');
+                return;
+            }
+            
+            if (Object.keys(classData).length === 0) {
+                showStatus('No current data to compare. Load some files first.', 'error');
+                return;
+            }
+            
+            isComparingWithBase = !isComparingWithBase;
+            const compareBtn = document.getElementById('compareBtn');
+            
+            if (isComparingWithBase) {
+                compareBtn.textContent = 'Stop Comparing';
+                compareBtn.style.backgroundColor = '#dc3545';
             } else {
-                // For attack, defense, speed
-                const multiplier = level / 4 * level / 10 / 100;
-                return Math.round(calculatedValue / (1 + multiplier));
+                compareBtn.textContent = 'Compare with Base';
+                compareBtn.style.backgroundColor = '#ffc107';
+            }
+            
+            renderTable();
+        }
+
+        function getCalculatedDifferenceText(currentData, baseData, field, level) {
+            if (!baseData) {
+                return '<span class="diff-positive">NEW</span>';
+            }
+            
+            let currentCalc, baseCalc;
+            
+            switch(field) {
+                case 'attack':
+                    currentCalc = getAttackValue(currentData.attack, level);
+                    baseCalc = getAttackValue(baseData.attack, level);
+                    break;
+                case 'defense':
+                    currentCalc = getDefenseValue(currentData.defense, level);
+                    baseCalc = getDefenseValue(baseData.defense, level);
+                    break;
+                case 'speed':
+                    currentCalc = getSpeedValue(currentData.speed, level);
+                    baseCalc = getSpeedValue(baseData.speed, level);
+                    break;
+                case 'health':
+                    currentCalc = getMaxHealthValue(currentData.health, level);
+                    baseCalc = getMaxHealthValue(baseData.health, level);
+                    break;
+                case 'fightPoint':
+                    currentCalc = getMaxCumulativeEnergyValue(currentData.fightPoint, level);
+                    baseCalc = getMaxCumulativeEnergyValue(baseData.fightPoint, level);
+                    break;
+                case 'baseBreath':
+                case 'breathRegen':
+                case 'maxBreath':
+                    // These don't scale with level, so use raw values
+                    currentCalc = currentData[field];
+                    baseCalc = baseData[field];
+                    break;
+                default:
+                    return '<span class="diff-neutral">—</span>';
+            }
+            
+            const diff = currentCalc - baseCalc;
+            if (diff === 0) {
+                return '<span class="diff-neutral">—</span>';
+            } else if (diff > 0) {
+                return `<span class="diff-positive">+${diff}</span>`;
+            } else {
+                return `<span class="diff-negative">${diff}</span>`;
             }
         }
 
@@ -397,16 +622,22 @@
                             const classId = parseInt(file.name.replace('.json', ''));
                             classData[classId] = {
                                 ...data,
-                                fileName: file.name
+                                fileName: file.name,
+                                isBaseVersion: false
                             };
                             filesProcessed++;
                             
                             if (filesProcessed === files.length) {
+                                showStatus(`Loaded ${Object.keys(classData).length} class files`, 'success');
+                                // Enable compare button if base data exists
+                                if (Object.keys(baseClassData).length > 0) {
+                                    document.getElementById('compareBtn').disabled = false;
+                                }
                                 renderTable();
                             }
                         } catch (error) {
                             console.error('Error parsing JSON file:', file.name, error);
-                            alert(`Error parsing ${file.name}: ${error.message}`);
+                            showStatus(`Error parsing ${file.name}: ${error.message}`, 'error');
                         }
                     };
                     reader.readAsText(file);
@@ -482,6 +713,7 @@
 
         function addClassRows(classId) {
             const data = classData[classId];
+            const baseData = baseClassData[classId];
             const className = classNames[classId] || `Class ${classId}`;
             const level = parseInt(document.getElementById('levelInput').value);
             const tableBody = document.getElementById('classTableBody');
@@ -493,6 +725,7 @@
                 <td class="class-name">
                     <input type="checkbox" class="class-checkbox" data-class-id="${classId}">
                     ${className} <span class="stats-label">(Raw)</span>
+                    ${data.isBaseVersion ? ' <span class="stats-label">[Base]</span>' : ''}
                 </td>
                 <td><input type="number" class="table-input" value="${data.attack}" onchange="updateRawValue(${classId}, 'attack', this.value)"></td>
                 <td><input type="number" class="table-input" value="${data.defense}" onchange="updateRawValue(${classId}, 'defense', this.value)"></td>
@@ -505,46 +738,49 @@
                 <td><button onclick="downloadSingle(${classId})">Download</button></td>
             `;
             
-            // Calculated values row
+            // Calculated values row (now read-only)
             const calcRow = document.createElement('tr');
             calcRow.className = 'calculated-values';
             calcRow.innerHTML = `
                 <td class="class-name">${className} <span class="stats-label">(Level ${level})</span></td>
-                <td><input type="number" class="table-input" value="${getAttackValue(data.attack, level)}" onchange="updateCalculatedValue(${classId}, 'attack', this.value)"></td>
-                <td><input type="number" class="table-input" value="${getDefenseValue(data.defense, level)}" onchange="updateCalculatedValue(${classId}, 'defense', this.value)"></td>
-                <td><input type="number" class="table-input" value="${getSpeedValue(data.speed, level)}" onchange="updateCalculatedValue(${classId}, 'speed', this.value)"></td>
-                <td class="health-column"><input type="number" class="table-input" value="${getMaxHealthValue(data.health, level)}" onchange="updateCalculatedValue(${classId}, 'health', this.value)"></td>
-                <td><input type="number" class="table-input" value="${getMaxCumulativeEnergyValue(data.fightPoint, level)}" onchange="updateCalculatedValue(${classId}, 'fightPoint', this.value)"></td>
-                <td class="breath-column">${data.baseBreath}</td>
-                <td class="breath-column">${data.breathRegen}</td>
-                <td class="breath-column">${data.maxBreath}</td>
+                <td><div class="calculated-display">${getAttackValue(data.attack, level)}</div></td>
+                <td><div class="calculated-display">${getDefenseValue(data.defense, level)}</div></td>
+                <td><div class="calculated-display">${getSpeedValue(data.speed, level)}</div></td>
+                <td class="health-column"><div class="calculated-display">${getMaxHealthValue(data.health, level)}</div></td>
+                <td><div class="calculated-display">${getMaxCumulativeEnergyValue(data.fightPoint, level)}</div></td>
+                <td class="breath-column"><div class="calculated-display">${data.baseBreath}</div></td>
+                <td class="breath-column"><div class="calculated-display">${data.breathRegen}</div></td>
+                <td class="breath-column"><div class="calculated-display">${data.maxBreath}</div></td>
                 <td></td>
             `;
             
             tableBody.appendChild(rawRow);
             tableBody.appendChild(calcRow);
+            
+            // Add comparison row if comparing with base
+            if (isComparingWithBase && baseData) {
+                const compRow = document.createElement('tr');
+                compRow.className = 'comparison-values';
+                compRow.innerHTML = `
+                    <td class="class-name"><span class="stats-label">Δ vs Base (Lvl ${level})</span></td>
+                    <td class="comparison-cell">${getCalculatedDifferenceText(data, baseData, 'attack', level)}</td>
+                    <td class="comparison-cell">${getCalculatedDifferenceText(data, baseData, 'defense', level)}</td>
+                    <td class="comparison-cell">${getCalculatedDifferenceText(data, baseData, 'speed', level)}</td>
+                    <td class="comparison-cell health-column">${getCalculatedDifferenceText(data, baseData, 'health', level)}</td>
+                    <td class="comparison-cell">${getCalculatedDifferenceText(data, baseData, 'fightPoint', level)}</td>
+                    <td class="comparison-cell breath-column">${getCalculatedDifferenceText(data, baseData, 'baseBreath', level)}</td>
+                    <td class="comparison-cell breath-column">${getCalculatedDifferenceText(data, baseData, 'breathRegen', level)}</td>
+                    <td class="comparison-cell breath-column">${getCalculatedDifferenceText(data, baseData, 'maxBreath', level)}</td>
+                    <td></td>
+                `;
+                tableBody.appendChild(compRow);
+            }
         }
 
         function updateRawValue(classId, property, value) {
             classData[classId][property] = parseInt(value);
+            classData[classId].isBaseVersion = false; // Mark as modified
             updateCalculatedValues();
-        }
-
-        function updateCalculatedValue(classId, property, value) {
-            const level = parseInt(document.getElementById('levelInput').value);
-            const calculatedValue = parseInt(value);
-            
-            let newBaseValue;
-            if (property === 'health') {
-                newBaseValue = getBaseFromCalculated(calculatedValue, classData[classId][property], level, 'health');
-            } else if (property === 'fightPoint') {
-                newBaseValue = getBaseFromCalculated(calculatedValue, classData[classId][property], level, 'fightPoint');
-            } else {
-                newBaseValue = getBaseFromCalculated(calculatedValue, classData[classId][property], level, property);
-            }
-            
-            classData[classId][property] = Math.max(0, Math.round(newBaseValue));
-            renderTable();
         }
 
         function updateCalculatedValues() {
@@ -553,7 +789,9 @@
 
         function downloadSingle(classId) {
             const data = { ...classData[classId] };
+            // Remove editor-specific properties
             delete data.fileName;
+            delete data.isBaseVersion;
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
