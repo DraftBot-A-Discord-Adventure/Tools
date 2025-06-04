@@ -41,6 +41,67 @@
             gap: 10px;
         }
         
+        .toggles-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #007bff;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
         .download-section {
             display: flex;
             gap: 10px;
@@ -102,6 +163,13 @@
             top: 0;
         }
         
+        .tier-column-header {
+            background-color: #6c757d;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
         .class-name {
             font-weight: bold;
             text-align: left;
@@ -142,6 +210,15 @@
             color: #666;
             font-style: italic;
         }
+        
+        /* Hide columns when toggles are off */
+        .hide-health .health-column {
+            display: none;
+        }
+        
+        .hide-breath .breath-column {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -159,13 +236,30 @@
                 <input type="number" id="levelInput" value="1" min="1" max="100" onchange="updateCalculatedValues()">
             </div>
             
+            <div class="toggles-section">
+                <div class="toggle-group">
+                    <label>Show Health:</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="healthToggle" checked onchange="toggleColumns()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <label>Show Breath:</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="breathToggle" checked onchange="toggleColumns()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+            
             <div class="download-section">
                 <button onclick="downloadAll()" disabled id="downloadAllBtn">Download All</button>
                 <button onclick="downloadSelected()" disabled id="downloadSelectedBtn">Download Selected</button>
             </div>
         </div>
         
-        <div class="table-container">
+        <div class="table-container" id="tableContainer">
             <table id="classTable" style="display: none;">
                 <thead>
                     <tr>
@@ -173,11 +267,11 @@
                         <th>Attack</th>
                         <th>Defense</th>
                         <th>Speed</th>
-                        <th>Health</th>
+                        <th class="health-column">Health</th>
                         <th>Fight Point</th>
-                        <th>Base Breath</th>
-                        <th>Breath Regen</th>
-                        <th>Max Breath</th>
+                        <th class="breath-column">Base Breath</th>
+                        <th class="breath-column">Breath Regen</th>
+                        <th class="breath-column">Max Breath</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -265,6 +359,23 @@
             }
         }
 
+        function toggleColumns() {
+            const tableContainer = document.getElementById('tableContainer');
+            const healthToggle = document.getElementById('healthToggle');
+            const breathToggle = document.getElementById('breathToggle');
+            
+            // Remove existing classes
+            tableContainer.classList.remove('hide-health', 'hide-breath');
+            
+            // Add classes based on toggle states
+            if (!healthToggle.checked) {
+                tableContainer.classList.add('hide-health');
+            }
+            if (!breathToggle.checked) {
+                tableContainer.classList.add('hide-breath');
+            }
+        }
+
         function loadFiles() {
             const fileInput = document.getElementById('fileInput');
             const files = fileInput.files;
@@ -305,6 +416,24 @@
             });
         }
 
+        function addColumnHeaders(tableBody) {
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'tier-column-header';
+            headerRow.innerHTML = `
+                <td class="tier-column-header">Class Name</td>
+                <td class="tier-column-header">Attack</td>
+                <td class="tier-column-header">Defense</td>
+                <td class="tier-column-header">Speed</td>
+                <td class="tier-column-header health-column">Health</td>
+                <td class="tier-column-header">Fight Point</td>
+                <td class="tier-column-header breath-column">Base Breath</td>
+                <td class="tier-column-header breath-column">Breath Regen</td>
+                <td class="tier-column-header breath-column">Max Breath</td>
+                <td class="tier-column-header">Actions</td>
+            `;
+            tableBody.appendChild(headerRow);
+        }
+
         function renderTable() {
             const tableBody = document.getElementById('classTableBody');
             const table = document.getElementById('classTable');
@@ -337,12 +466,18 @@
                     tierRow.innerHTML = `<td colspan="10" class="tier-header">${tierName}</td>`;
                     tableBody.appendChild(tierRow);
                     
+                    // Add column headers for this tier
+                    addColumnHeaders(tableBody);
+                    
                     // Add classes in this tier
                     tierClasses.forEach(classId => {
                         addClassRows(classId);
                     });
                 }
             });
+            
+            // Apply column visibility
+            toggleColumns();
         }
 
         function addClassRows(classId) {
@@ -362,11 +497,11 @@
                 <td><input type="number" class="table-input" value="${data.attack}" onchange="updateRawValue(${classId}, 'attack', this.value)"></td>
                 <td><input type="number" class="table-input" value="${data.defense}" onchange="updateRawValue(${classId}, 'defense', this.value)"></td>
                 <td><input type="number" class="table-input" value="${data.speed}" onchange="updateRawValue(${classId}, 'speed', this.value)"></td>
-                <td><input type="number" class="table-input" value="${data.health}" onchange="updateRawValue(${classId}, 'health', this.value)"></td>
+                <td class="health-column"><input type="number" class="table-input" value="${data.health}" onchange="updateRawValue(${classId}, 'health', this.value)"></td>
                 <td><input type="number" class="table-input" value="${data.fightPoint}" onchange="updateRawValue(${classId}, 'fightPoint', this.value)"></td>
-                <td><input type="number" class="table-input" value="${data.baseBreath}" onchange="updateRawValue(${classId}, 'baseBreath', this.value)"></td>
-                <td><input type="number" class="table-input" value="${data.breathRegen}" onchange="updateRawValue(${classId}, 'breathRegen', this.value)"></td>
-                <td><input type="number" class="table-input" value="${data.maxBreath}" onchange="updateRawValue(${classId}, 'maxBreath', this.value)"></td>
+                <td class="breath-column"><input type="number" class="table-input" value="${data.baseBreath}" onchange="updateRawValue(${classId}, 'baseBreath', this.value)"></td>
+                <td class="breath-column"><input type="number" class="table-input" value="${data.breathRegen}" onchange="updateRawValue(${classId}, 'breathRegen', this.value)"></td>
+                <td class="breath-column"><input type="number" class="table-input" value="${data.maxBreath}" onchange="updateRawValue(${classId}, 'maxBreath', this.value)"></td>
                 <td><button onclick="downloadSingle(${classId})">Download</button></td>
             `;
             
@@ -378,11 +513,11 @@
                 <td><input type="number" class="table-input" value="${getAttackValue(data.attack, level)}" onchange="updateCalculatedValue(${classId}, 'attack', this.value)"></td>
                 <td><input type="number" class="table-input" value="${getDefenseValue(data.defense, level)}" onchange="updateCalculatedValue(${classId}, 'defense', this.value)"></td>
                 <td><input type="number" class="table-input" value="${getSpeedValue(data.speed, level)}" onchange="updateCalculatedValue(${classId}, 'speed', this.value)"></td>
-                <td><input type="number" class="table-input" value="${getMaxHealthValue(data.health, level)}" onchange="updateCalculatedValue(${classId}, 'health', this.value)"></td>
+                <td class="health-column"><input type="number" class="table-input" value="${getMaxHealthValue(data.health, level)}" onchange="updateCalculatedValue(${classId}, 'health', this.value)"></td>
                 <td><input type="number" class="table-input" value="${getMaxCumulativeEnergyValue(data.fightPoint, level)}" onchange="updateCalculatedValue(${classId}, 'fightPoint', this.value)"></td>
-                <td>${data.baseBreath}</td>
-                <td>${data.breathRegen}</td>
-                <td>${data.maxBreath}</td>
+                <td class="breath-column">${data.baseBreath}</td>
+                <td class="breath-column">${data.breathRegen}</td>
+                <td class="breath-column">${data.maxBreath}</td>
                 <td></td>
             `;
             
@@ -451,6 +586,11 @@
 
         // Initialize level input change listener
         document.getElementById('levelInput').addEventListener('input', updateCalculatedValues);
+        
+        // Initialize column visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleColumns();
+        });
     </script>
 </body>
 </html>
