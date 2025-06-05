@@ -5,7 +5,9 @@ imageMapContinentEn = Image.open('./Ressources/map_en.jpg')
 imageMapIleVolcaniqueFr = Image.open('./Ressources/volcano_island_fr.jpg')
 imageMapIleVolcaniqueEn = Image.open('./Ressources/volcano_island_en.jpg')
 imageMapIleGlaceExterieurFr = Image.open('./Ressources/ice_island_exterior_fr.jpg')
+imageMapIleGlaceExterieurEn = Image.open('./Ressources/ice_island_exterior_en.jpg')
 imageMapIleGlaceInterieurFr = Image.open('./Ressources/ice_island_interior_fr.jpg')
+imageMapIleGlaceInterieurEn = Image.open('./Ressources/ice_island_interior_en.jpg')
 imageCursor = Image.open('./Ressources/Marqueur.png')
 imageCross = Image.open('./Ressources/cross.png')
 
@@ -127,7 +129,6 @@ ListPointeursIleGlaceInterieur = [
     ["1107", 1980, 1481]
 ]
 
-'''
 for mapLink in ListPointeursContinent1:
     newMap = imageMapContinentFr.copy()
     newMap.paste(imageCursor, (mapLink[1], mapLink[2]), imageCursor)
@@ -136,7 +137,6 @@ for mapLink in ListPointeursContinent1:
     resizedCursor = imageCursor.resize((round(imageCursor.width/2), round(imageCursor.height/2)))
     newMap.paste(resizedCursor, (round(mapLink[1]/2), round(mapLink[2]/2)), resizedCursor)
     newMap.save('./Ressources/mapsCursed/en_'+mapLink[0]+'_map.jpg',quality=100)
-'''
 
 def generateIslandMaps(imageMap, ListPointeurs, lang):
     for mapLink in ListPointeurs:
@@ -148,3 +148,5 @@ generateIslandMaps(imageMapIleVolcaniqueFr, ListPointeursIleVolcanique, 'fr')
 generateIslandMaps(imageMapIleVolcaniqueEn, ListPointeursIleVolcanique, 'en')
 generateIslandMaps(imageMapIleGlaceExterieurFr, ListPointeursIleGlaceExterieur, 'fr')
 generateIslandMaps(imageMapIleGlaceInterieurFr, ListPointeursIleGlaceInterieur, 'fr')
+generateIslandMaps(imageMapIleGlaceExterieurEn, ListPointeursIleGlaceExterieur, 'en')
+generateIslandMaps(imageMapIleGlaceInterieurEn, ListPointeursIleGlaceInterieur, 'en')
