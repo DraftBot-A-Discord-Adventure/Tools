@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisation de Carte DraftBot</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8fafc;
+        }
+        .graph-container {
+            width: 100vw;
+            height: 80vh;
+            overflow: auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+            margin-top: 2rem;
+        }
+        .node {
+            cursor: pointer;
+            stroke: #333;
+            stroke-width: 2px;
+            transition: filter 0.2s;
+        }
+        .node:hover {
+            filter: drop-shadow(0 0 8px #0d6efd);
+        }
+        .link {
+            stroke: #aaa;
+            stroke-width: 2px;
+            marker-end: url(#arrowhead);
+        }
+        .tooltip-inner {
+            max-width: 350px;
+            text-align: left;
+        }
+        .upload-btn {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <h1 class="mb-4 text-center">Visualisation de Carte DraftBot</h1>
+    <div class="row mb-3">
+        <div class="col-md-2 col-6">
+            <label class="form-label">Events (dossier)</label>
+            <input class="form-control upload-btn" type="file" id="eventsFolder" webkitdirectory directory multiple>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">MapLinks (dossier)</label>
+            <input class="form-control upload-btn" type="file" id="mapLinksFolder" webkitdirectory directory multiple>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">MapLocations (dossier)</label>
+            <input class="form-control upload-btn" type="file" id="mapLocationsFolder" webkitdirectory directory multiple>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">Monsters (dossier)</label>
+            <input class="form-control upload-btn" type="file" id="monstersFolder" webkitdirectory directory multiple>
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">events.json</label>
+            <input class="form-control upload-btn" type="file" id="eventsJson">
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">models.json</label>
+            <input class="form-control upload-btn" type="file" id="modelsJson">
+        </div>
+        <div class="col-md-2 col-6">
+            <label class="form-label">DraftBotIcons.ts</label>
+            <input class="form-control upload-btn" type="file" id="iconsTs">
+        </div>
+    </div>
+    <div class="d-grid gap-2 mb-3">
+        <button class="btn btn-primary" id="drawGraphBtn">Générer la carte</button>
+    </div>
+    <div class="graph-container p-2">
+        <svg id="mapGraph" width="100%" height="100%"></svg>
+    </div>
+</div>
+
+<!-- Bootstrap JS + Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- D3.js for graph rendering -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+// --- Variables globales pour stocker les données ---
+let events = {}, mapLinks = {}, mapLocations = {}, monsters = {}, eventsText = {}, models = {};
+let icons = { events: {}, mapTypes: {}, monsters: {} };
+
+// --- Fonctions d'upload et de parsing ---
+function readFiles(input, callback) {
+    const files = Array.from(input.files);
+    let results = {};
+    let toRead = files.length;
+    if (toRead === 0) return callback(results);
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const json = JSON.parse(e.target.result);
+                const id = file.name.replace(/\.json$/, "");
+                results[id] = json;
+            } catch (err) {}
+            if (--toRead === 0) callback(results);
+        };
+        reader.readAsText(file);
+    });
+}
+
+function readSingleFile(input, callback) {
+    if (!input.files[0]) return callback({});
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            callback(JSON.parse(e.target.result));
+        } catch (err) { callback({}); }
+    };
+    reader.readAsText(input.files[0]);
+}
+
+function extractJsonValue(str, key) {
+    const keyPattern = new RegExp(`"${key}"\\s*:\\s*{`, 'g');
+    const match = keyPattern.exec(str);
+    if (!match) return null;
+    let start = match.index + match[0].length - 1;
+    let braceCount = 1, i = start + 1;
+    while (i < str.length && braceCount > 0) {
+        if (str[i] === '{') braceCount++;
+        else if (str[i] === '}') braceCount--;
+        i++;
+    }
+    return str.slice(start, i);
+}
+
+// --- Gestion des uploads ---
+document.getElementById('eventsFolder').addEventListener('change', e => {
+    readFiles(e.target, res => { events = res; });
+});
+document.getElementById('mapLinksFolder').addEventListener('change', e => {
+    readFiles(e.target, res => { mapLinks = res; });
+});
+document.getElementById('mapLocationsFolder').addEventListener('change', e => {
+    readFiles(e.target, res => { mapLocations = res; });
+});
+document.getElementById('monstersFolder').addEventListener('change', e => {
+    readFiles(e.target, res => { monsters = res; });
+});
+document.getElementById('eventsJson').addEventListener('change', e => {
+    readSingleFile(e.target, res => { eventsText = res; });
+});
+document.getElementById('modelsJson').addEventListener('change', e => {
+    readSingleFile(e.target, res => { models = res; });
+});
+document.getElementById('iconsTs').addEventListener('change', e => {
+    if (!e.target.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        const text = ev.target.result;
+        // Extract the DraftBotIcons object block
+        const match = text.match(/DraftBotIcons[\s\S]*=\s*({[\s\S]*?});/);
+        if (!match) return { events: {}, mapTypes: {}, monsters: {} };
+        let objText = match[1];
+
+        // Quote unquoted keys
+        objText = objText.replace(/([,{]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+
+        // Parse as JSON
+        try {
+            // Create a clean json
+            let jsonObj = { "events": JSON.parse(extractJsonValue(objText, 'events')) || {},
+                "mapTypes": JSON.parse(extractJsonValue(objText, 'mapTypes')) || {},
+                "monsters": JSON.parse(extractJsonValue(objText, 'monsters')) || {} };
+            icons = {
+                events: jsonObj.events || {},
+                mapTypes: jsonObj.mapTypes || {},
+                monsters: jsonObj.monsters || {}
+            };
+        } catch (e) {
+            console.error("Erreur lors du parsing de DraftBotIcons :", e);
+            icons = { events: {}, mapTypes: {}, monsters: {} };
+        }
+    };
+    reader.readAsText(e.target.files[0]);
+});
+
+// --- Génération du graphe ---
+document.getElementById('drawGraphBtn').addEventListener('click', () => {
+    drawGraph();
+});
+
+function drawGraph() {
+    const svg = d3.select('#mapGraph');
+    svg.selectAll('*').remove();
+    // Ajout d'un groupe pour le zoom/pan
+    const g = svg.append('g').attr('class', 'zoom-group');
+    // --- Préparation des données ---
+    let nodes = Object.entries(mapLocations).map(([id, loc]) => ({
+        id: String(id),
+        ...loc,
+        ...((models.map_locations||{})[id]||{})
+    }));
+    // Créer un Set des IDs de noeuds pour filtrer les liens invalides
+    const nodeIds = new Set(nodes.map(n => n.id));
+    let links = Object.entries(mapLinks).map(([id, link]) => ({
+        id,
+        ...link,
+        source: String(link.startMap),
+        target: String(link.endMap)
+    })).filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
+    let eventsByMap = {};
+    for (const [eventId, eventObj] of Object.entries(events)) {
+        if (!eventObj.triggers) continue;
+        for (const trig of eventObj.triggers) {
+            if (!trig.mapId) continue;
+            if (!eventsByMap[trig.mapId]) eventsByMap[trig.mapId] = [];
+            eventsByMap[trig.mapId].push(eventId);
+        }
+    }
+    let monstersByMap = {};
+    for (const [monsterId, monsterObj] of Object.entries(monsters)) {
+        if (!monsterObj.maps) continue;
+        for (const mapId of monsterObj.maps) {
+            if (!monstersByMap[mapId]) monstersByMap[mapId] = [];
+            monstersByMap[mapId].push(monsterId);
+        }
+    }
+    const width = svg.node().clientWidth || 1200;
+    const height = svg.node().clientHeight || 800;
+    // --- Force layout ---
+    const simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(180).strength(0.2))
+        .force('charge', d3.forceManyBody().strength(-600))
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('collide', d3.forceCollide(50));
+    svg.append('defs').append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 18)
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#aaa');
+    const link = g.selectAll('.link')
+        .data(links)
+        .enter()
+        .append('line')
+        .attr('class', 'link')
+        .attr('marker-end', 'url(#arrowhead)');
+    const linkLabel = g.selectAll('.link-label')
+        .data(links)
+        .enter()
+        .append('text')
+        .attr('class', 'link-label')
+        .attr('font-size', '13px')
+        .attr('fill', '#0d6efd')
+        .attr('text-anchor', 'middle');
+    const node = g.selectAll('.node')
+        .data(nodes)
+        .enter()
+        .append('circle')
+        .attr('class', 'node')
+        .attr('r', 32)
+        .attr('fill', d => '#e3f2fd')
+        .attr('data-bs-toggle', 'tooltip')
+        .attr('data-bs-html', 'true')
+        .attr('title', d => makeTooltip(d, eventsByMap, eventsText, models, monstersByMap))
+        .call(d3.drag()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended)
+        );
+    const nodeLabel = g.selectAll('.node-label')
+        .data(nodes)
+        .enter()
+        .append('text')
+        .attr('class', 'node-label')
+        .attr('font-size', '15px')
+        .attr('fill', '#333')
+        .attr('text-anchor', 'middle')
+        .text(d => d.name || d.id);
+    simulation.on('tick', () => {
+        link
+            .attr('x1', d => d.source.x)
+            .attr('y1', d => d.source.y)
+            .attr('x2', d => d.target.x)
+            .attr('y2', d => d.target.y);
+        linkLabel
+            .attr('x', d => (d.source.x + d.target.x) / 2)
+            .attr('y', d => (d.source.y + d.target.y) / 2 - 10)
+            .text(d => {
+                const dx = d.target.x - d.source.x, dy = d.target.y - d.source.y;
+                let dir = '';
+                if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? '→' : '←';
+                else dir = dy > 0 ? '↓' : '↑';
+                // Format heure:minute
+                const min = Number(d.tripDuration) || 0;
+                const h = Math.floor(min / 60);
+                const m = min % 60;
+                let timeStr = h > 0 ? `${h}h${m > 0 ? m + 'm' : ''}` : `${m}m`;
+                return `${timeStr} ${dir}`;
+            });
+        node
+            .attr('cx', d => d.x)
+            .attr('cy', d => d.y);
+        nodeLabel
+            .attr('x', d => d.x)
+            .attr('y', d => d.y + 5);
+    });
+    // Ajout du zoom/pan
+    svg.call(d3.zoom()
+        .scaleExtent([0.2, 3])
+        .on('zoom', (event) => {
+            g.attr('transform', event.transform);
+        })
+    );
+    setTimeout(() => {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+    }, 200);
+    function dragstarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+    function dragended(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+}
+
+function makeTooltip(node, eventsByMap, eventsText, models, monstersByMap) {
+    // Récupération de l'icône du lieu
+    let placeIcon = '';
+    if (icons.mapTypes && node.type && icons.mapTypes[node.type]) {
+        placeIcon = icons.mapTypes[node.type] + ' ';
+    }
+    let html = `<b>${placeIcon}${node.name || node.id}</b><br>`;
+    if (node.description) html += `<i>${node.description}</i><br>`;
+    if (models.map_types && node.type && models.map_types[node.type]) {
+        html += `<span class='badge bg-info'>${models.map_types[node.type].name}</span><br>`;
+    }
+    if (monstersByMap[node.id]) {
+        html += `<b>Monstres :</b> ` + monstersByMap[node.id].map(mid => {
+            let icon = icons.monsters && icons.monsters[mid] ? icons.monsters[mid] + ' ' : '';
+            let name = models.monsters && models.monsters[mid] ? models.monsters[mid].name : mid;
+            return icon + name;
+        }).join(', ') + '<br>';
+    }
+    if (eventsByMap[node.id]) {
+        html += `<b>Événements :</b><ul>`;
+        for (const eid of eventsByMap[node.id]) {
+            // Icône de l'événement
+            let eventIcon = icons.events && icons.events[eid] && icons.events[eid].icon ? icons.events[eid].icon + ' ' : '';
+            const eventText = eventsText[eid]?.text || '';
+            html += `<li><b>${eid}</b> : ${eventIcon}${eventText}`;
+            // Afficher uniquement les textes des choix (possibilities)
+            const eventPoss = eventsText[eid]?.possibilities;
+            const eventIcons = icons.events && icons.events[eid] ? icons.events[eid] : {};
+            if (eventPoss) {
+                html += '<ul>';
+                for (const [choiceKey, choiceObj] of Object.entries(eventPoss)) {
+                    let choiceIcon = eventIcons[choiceKey] ? eventIcons[choiceKey] + ' ' : '';
+                    if (typeof choiceObj === 'object' && 'text' in choiceObj) {
+                        html += `<li>${choiceIcon}${choiceObj.text}</li>`;
+                    }
+                }
+                html += '</ul>';
+            }
+            html += '</li>';
+        }
+        html += '</ul>';
+    }
+    return html;
+}
+</script>
+</body>
+</html>
+
