@@ -324,6 +324,14 @@ function drawGraph() {
     setTimeout(() => {
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+        // Ajout du tooltip sur les liens
+        document.querySelectorAll('.link').forEach((el, i) => {
+            const d = links[i];
+            el.setAttribute('data-bs-toggle', 'tooltip');
+            el.setAttribute('data-bs-html', 'true');
+            el.setAttribute('title', `<b>Link ID:</b> <code>${d.id}</code><br><b>De:</b> <code>${d.source.id || d.source}</code> → <b>À:</b> <code>${d.target.id || d.target}</code>`);
+            new bootstrap.Tooltip(el);
+        });
     }, 200);
     function dragstarted(event, d) {
         if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -348,6 +356,8 @@ function makeTooltip(node, eventsByMap, eventsText, models, monstersByMap) {
         placeIcon = icons.mapTypes[node.type] + ' ';
     }
     let html = `<b>${placeIcon}${node.name || node.id}</b><br>`;
+    // Ajout de l'ID de la map
+    html += `<span class='text-muted'>ID: <code>${node.id}</code></span><br>`;
     if (node.description) html += `<i>${node.description}</i><br>`;
     if (models.map_types && node.type && models.map_types[node.type]) {
         html += `<span class='badge bg-info'>${models.map_types[node.type].name}</span><br>`;
@@ -388,4 +398,3 @@ function makeTooltip(node, eventsByMap, eventsText, models, monstersByMap) {
 </script>
 </body>
 </html>
-
