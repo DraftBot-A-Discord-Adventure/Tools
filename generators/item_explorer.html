@@ -248,6 +248,7 @@
             <button class="type-btn" data-type="weapons">Weapons</button>
             <button class="type-btn" data-type="armors">Armors</button>
             <button class="type-btn" data-type="objects">Objects</button>
+            <button class="type-btn" data-type="potions">Potions</button>
         </div>
         
         <div id="loading">
@@ -265,6 +266,7 @@
                 <p>Weapons: <span id="weapons-count">0</span></p>
                 <p>Armors: <span id="armors-count">0</span></p>
                 <p>Objects: <span id="objects-count">0</span></p>
+                <p>Potions: <span id="potions-count">0</span></p>
                 <p>Total: <span id="total-count">0</span></p>
             </div>
             
@@ -310,7 +312,8 @@
         let allItems = {
             weapons: [],
             armors: [],
-            objects: []
+            objects: [],
+            potions: []
         };
         
         // Cache for already loaded branches
@@ -320,7 +323,8 @@
         let itemNames = {
             weapons: {},
             armors: {},
-            objects: {}
+            objects: {},
+            potions: {}
         };
         
         // DOM elements
@@ -342,6 +346,7 @@
         const weaponsCount = document.getElementById('weapons-count');
         const armorsCount = document.getElementById('armors-count');
         const objectsCount = document.getElementById('objects-count');
+        const potionsCount = document.getElementById('potions-count');
         const totalCount = document.getElementById('total-count');
         const rarityStats = document.getElementById('rarity-stats');
         
@@ -471,11 +476,13 @@
                 itemNames.weapons = i18nData.weapons || {};
                 itemNames.armors = i18nData.armors || {};
                 itemNames.objects = i18nData.objects || {};
+                itemNames.potions = i18nData.potions || {};
                 
                 console.log('Loaded item names:', {
                     weapons: Object.keys(itemNames.weapons).length,
                     armors: Object.keys(itemNames.armors).length,
-                    objects: Object.keys(itemNames.objects).length
+                    objects: Object.keys(itemNames.objects).length,
+                    potions: Object.keys(itemNames.potions).length
                 });
                 
             } catch (error) {
@@ -506,7 +513,8 @@
                 allItems = {
                     weapons: [],
                     armors: [],
-                    objects: []
+                    objects: [],
+                    potions: []
                 };
                 
                 // Load item names from i18n first
@@ -516,7 +524,8 @@
                 const itemTypes = [
                     { type: 'weapons', count: 99 },
                     { type: 'armors', count: 65 },
-                    { type: 'objects', count: 93 }
+                    { type: 'objects', count: 93 },
+                    { type: 'potions', count: 50 }
                 ];
                 
                 // Get all directory contents in a more efficient way
@@ -576,6 +585,8 @@
                                         calculateArmorStats(item);
                                     } else if (type === 'objects') {
                                         calculateObjectStats(item);
+                                    } else if (type === 'potions') {
+                                        calculatePotionStats(item);
                                     }
                                     
                                     return item;
@@ -671,7 +682,7 @@
                         throw new Error('Invalid file format. Missing required fields.');
                     }
                     
-                    if (!importedData.items.weapons || !importedData.items.armors || !importedData.items.objects) {
+                    if (!importedData.items.weapons || !importedData.items.armors || !importedData.items.objects || !importedData.items.potions) {
                         throw new Error('Invalid file format. Missing item types.');
                     }
                     
@@ -692,7 +703,7 @@
                     // Enable save button
                     saveBtn.disabled = false;
                     
-                    alert(`Successfully imported ${allItems.weapons.length + allItems.armors.length + allItems.objects.length} items from branch "${currentBranch}"\nImported on: ${importedData.timestamp}`);
+                    alert(`Successfully imported ${allItems.weapons.length + allItems.armors.length + allItems.objects.length + allItems.potions.length} items from branch "${currentBranch}"\nImported on: ${importedData.timestamp}`);
                     
                 } catch (error) {
                     console.error('Error importing data:', error);
@@ -807,6 +818,31 @@
             }
         }
         
+        // Calculate potion stats
+        function calculatePotionStats(item) {
+            item.power = item.power || 0;
+            item.nature = item.nature || 0;
+            
+            // Potions provide temporary boosts based on their nature
+            if (item.nature === 3) { // ATTACK
+                item.finalAttack = item.power;
+                item.finalDefense = 0;
+                item.finalSpeed = 0;
+            } else if (item.nature === 4) { // DEFENSE
+                item.finalAttack = 0;
+                item.finalDefense = item.power;
+                item.finalSpeed = 0;
+            } else if (item.nature === 2) { // SPEED
+                item.finalAttack = 0;
+                item.finalDefense = 0;
+                item.finalSpeed = item.power;
+            } else {
+                item.finalAttack = 0;
+                item.finalDefense = 0;
+                item.finalSpeed = 0;
+            }
+        }
+        
         // Compare function for sorting
         function compareItems(a, b, column, direction) {
             let valueA, valueB;
@@ -851,7 +887,8 @@
                 itemsToDisplay = [
                     ...allItems.weapons,
                     ...allItems.armors,
-                    ...allItems.objects
+                    ...allItems.objects,
+                    ...allItems.potions
                 ];
             } else {
                 itemsToDisplay = allItems[currentType];
@@ -901,7 +938,8 @@
             weaponsCount.textContent = allItems.weapons.length;
             armorsCount.textContent = allItems.armors.length;
             objectsCount.textContent = allItems.objects.length;
-            totalCount.textContent = allItems.weapons.length + allItems.armors.length + allItems.objects.length;
+            potionsCount.textContent = allItems.potions.length;
+            totalCount.textContent = allItems.weapons.length + allItems.armors.length + allItems.objects.length + allItems.potions.length;
             
             // Calculate rarity distribution
             const rarityDistribution = [0, 0, 0, 0, 0, 0, 0, 0, 0];
