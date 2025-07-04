@@ -809,26 +809,7 @@
             } else {
                 item.finalAttack = 0;
             }
-            
-            // Defense is 75% of attack formula
-            if (item.rawDefense) {
-                item.finalDefense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                             Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
-            } else if (item.finalAttack) {
-                item.finalDefense = Math.round(item.finalAttack * 0.75);
-            } else {
-                item.finalDefense = 0;
-            }
-            
-            // Speed is 50% of attack formula
-            if (item.rawSpeed) {
-                item.finalSpeed = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                           Math.pow(1.0569 + 0.1448 / multiplier, item.rawSpeed));
-            } else if (item.finalAttack) {
-                item.finalSpeed = Math.round(item.finalAttack * 0.5);
-            } else {
-                item.finalSpeed = 0;
-            }
+
         }
         
         // Calculate armor stats
@@ -846,26 +827,6 @@
                                              Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
             } else {
                 item.finalDefense = 0;
-            }
-            
-            // Attack is 75% of defense formula
-            if (item.rawAttack) {
-                item.finalAttack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                            Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
-            } else if (item.finalDefense) {
-                item.finalAttack = Math.round(item.finalDefense * 0.75);
-            } else {
-                item.finalAttack = 0;
-            }
-            
-            // Speed is 50% of defense formula
-            if (item.rawSpeed) {
-                item.finalSpeed = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                           Math.pow(1.0569 + 0.1448 / multiplier, item.rawSpeed));
-            } else if (item.finalDefense) {
-                item.finalSpeed = Math.round(item.finalDefense * 0.5);
-            } else {
-                item.finalSpeed = 0;
             }
         }
         
