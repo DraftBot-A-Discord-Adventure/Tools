@@ -11,6 +11,9 @@
             padding: 20px;
             background-color: #f5f5f5;
             color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         .container {
             max-width: 1200px;
@@ -19,6 +22,9 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
         }
         h1 {
             color: #2c3e50;
@@ -117,6 +123,19 @@
             background-color: #f2f2f2;
             position: sticky;
             top: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        th:hover {
+            background-color: #e0e0e0;
+        }
+        th.sorted-asc::after {
+            content: " ▲";
+            font-size: 0.8em;
+        }
+        th.sorted-desc::after {
+            content: " ▼";
+            font-size: 0.8em;
         }
         tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -125,9 +144,11 @@
             background-color: #f1f1f1;
         }
         .table-container {
-            max-height: 600px;
+            flex-grow: 1;
             overflow-y: auto;
             margin-top: 20px;
+            max-height: calc(100vh - 350px);
+            min-height: 400px;
         }
         .rarity-0 { color: #777; } /* Basic */
         .rarity-1 { color: #222; } /* Common */
@@ -191,7 +212,7 @@
         
         <div class="controls">
             <select id="branch-select">
-                <option value="main">main</option>
+                <option value="master">master</option>
                 <!-- Will be populated with branches -->
             </select>
             
@@ -262,19 +283,19 @@
             <table id="items-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Rarity</th>
-                        <th>Type</th>
-                        <th>Raw Attack</th>
-                        <th>Raw Defense</th>
-                        <th>Raw Speed</th>
-                        <th>Final Attack</th>
-                        <th>Final Defense</th>
-                        <th>Final Speed</th>
-                        <th>Nature</th>
-                        <th>Power</th>
-                        <th>Tags</th>
+                        <th data-sort="id">ID</th>
+                        <th data-sort="name">Name</th>
+                        <th data-sort="rarity">Rarity</th>
+                        <th data-sort="type">Type</th>
+                        <th data-sort="rawAttack">Raw Attack</th>
+                        <th data-sort="rawDefense">Raw Defense</th>
+                        <th data-sort="rawSpeed">Raw Speed</th>
+                        <th data-sort="finalAttack">Final Attack</th>
+                        <th data-sort="finalDefense">Final Defense</th>
+                        <th data-sort="finalSpeed">Final Speed</th>
+                        <th data-sort="nature">Nature</th>
+                        <th data-sort="power">Power</th>
+                        <th data-sort="tags">Tags</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -321,8 +342,10 @@
         
         // Current state
         let currentType = 'all';
-        let currentBranch = 'main';
+        let currentBranch = 'master'; // Changed from 'main' to 'master'
         let remainingApiCalls = 5000; // GitHub API default limit
+        let currentSortColumn = 'id';
+        let currentSortDirection = 'asc';
         
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
@@ -342,7 +365,40 @@
             
             searchInput.addEventListener('input', displayItems);
             rarityFilter.addEventListener('change', displayItems);
+            
+            // Setup column sorting
+            setupSorting();
         });
+        
+        // Setup sorting functionality
+        function setupSorting() {
+            const headers = itemsTable.querySelectorAll('th[data-sort]');
+            
+            headers.forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.sort;
+                    
+                    // If clicking the same column, toggle direction
+                    if (column === currentSortColumn) {
+                        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        // New column, default to ascending
+                        currentSortColumn = column;
+                        currentSortDirection = 'asc';
+                    }
+                    
+                    // Update header classes
+                    headers.forEach(h => {
+                        h.classList.remove('sorted-asc', 'sorted-desc');
+                    });
+                    
+                    header.classList.add(`sorted-${currentSortDirection}`);
+                    
+                    // Re-display items with new sort
+                    displayItems();
+                });
+            });
+        }
         
         // Load branches from GitHub
         async function loadBranches() {
@@ -354,14 +410,14 @@
                 
                 const branches = await response.json();
                 
-                // Clear existing options except the first one (main)
+                // Clear existing options except the first one (master)
                 while (branchSelect.options.length > 1) {
                     branchSelect.remove(1);
                 }
                 
                 // Add branches
                 branches.forEach(branch => {
-                    if (branch.name !== 'main') { // Skip main as it's already there
+                    if (branch.name !== 'master') { // Skip master as it's already there
                         const option = document.createElement('option');
                         option.value = branch.name;
                         option.textContent = branch.name;
@@ -621,6 +677,35 @@
             }
         }
         
+        // Compare function for sorting
+        function compareItems(a, b, column, direction) {
+            let valueA, valueB;
+            
+            // Handle special columns
+            if (column === 'name') {
+                valueA = (a.name || '').toLowerCase();
+                valueB = (b.name || '').toLowerCase();
+            } else if (column === 'tags') {
+                valueA = (a.tags ? a.tags.join(',') : '').toLowerCase();
+                valueB = (b.tags ? b.tags.join(',') : '').toLowerCase();
+            } else if (column === 'nature') {
+                valueA = NATURE_NAMES[a.nature] || '';
+                valueB = NATURE_NAMES[b.nature] || '';
+            } else {
+                valueA = a[column] || 0;
+                valueB = b[column] || 0;
+            }
+            
+            // Compare
+            if (valueA < valueB) {
+                return direction === 'asc' ? -1 : 1;
+            }
+            if (valueA > valueB) {
+                return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        }
+        
         // Display items in the table
         function displayItems() {
             const tbody = itemsTable.querySelector('tbody');
@@ -654,8 +739,8 @@
                 return (nameMatch || idMatch) && rarityMatch;
             });
             
-            // Sort by ID by default
-            itemsToDisplay.sort((a, b) => a.id - b.id);
+            // Sort items by the selected column and direction
+            itemsToDisplay.sort((a, b) => compareItems(a, b, currentSortColumn, currentSortDirection));
             
             // Create table rows
             itemsToDisplay.forEach(item => {
