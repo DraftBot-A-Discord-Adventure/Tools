@@ -316,6 +316,13 @@
         // Cache for already loaded branches
         const itemCache = {};
         
+        // Cache for item names from i18n
+        let itemNames = {
+            weapons: {},
+            armors: {},
+            objects: {}
+        };
+        
         // DOM elements
         const branchSelect = document.getElementById('branch-select');
         const loadBtn = document.getElementById('load-btn');
@@ -446,6 +453,37 @@
             }
         }
         
+        // Load item names from i18n file
+        async function loadItemNames(branch) {
+            try {
+                loadingStatus.textContent = 'Loading item names from i18n...';
+                
+                const response = await fetch(`https://raw.githubusercontent.com/Crownicles/Crownicles/${branch}/Lang/fr/models.json`);
+                updateApiRateLimit(response);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch i18n file: ${response.status}`);
+                }
+                
+                const i18nData = await response.json();
+                
+                // Extract item names
+                itemNames.weapons = i18nData.weapons || {};
+                itemNames.armors = i18nData.armors || {};
+                itemNames.objects = i18nData.objects || {};
+                
+                console.log('Loaded item names:', {
+                    weapons: Object.keys(itemNames.weapons).length,
+                    armors: Object.keys(itemNames.armors).length,
+                    objects: Object.keys(itemNames.objects).length
+                });
+                
+            } catch (error) {
+                console.warn('Failed to load item names from i18n:', error);
+                // Continue without names - will use generated ones
+            }
+        }
+        
         // Load items from the selected branch
         async function loadItems() {
             currentBranch = branchSelect.value;
@@ -455,6 +493,7 @@
                 allItems = JSON.parse(JSON.stringify(itemCache[currentBranch])); // Deep clone
                 updateStats();
                 displayItems();
+                saveBtn.disabled = false;
                 return;
             }
             
@@ -469,6 +508,9 @@
                     armors: [],
                     objects: []
                 };
+                
+                // Load item names from i18n first
+                await loadItemNames(currentBranch);
                 
                 // Item type metadata
                 const itemTypes = [
@@ -517,6 +559,15 @@
                                     const id = parseInt(file.name.split('.')[0]);
                                     item.id = id;
                                     item.type = type.slice(0, -1); // Remove 's' to get singular form
+                                    
+                                    // Get name from i18n or generate default
+                                    const i18nName = itemNames[type] && itemNames[type][id.toString()];
+                                    if (i18nName) {
+                                        item.name = i18nName;
+                                    } else {
+                                        const typeName = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+                                        item.name = `${typeName} ${id}`;
+                                    }
                                     
                                     // Calculate final stats
                                     if (type === 'weapons') {
