@@ -218,6 +218,10 @@
             
             <button id="load-btn">Load Items</button>
             
+            <button id="save-btn" disabled>Save Data</button>
+            <input type="file" id="import-file" accept=".json" style="display: none;">
+            <button id="import-btn">Import Data</button>
+            
             <input type="text" id="search" class="search-box" placeholder="Search items...">
             
             <div style="flex-grow: 1;"></div>
@@ -315,6 +319,9 @@
         // DOM elements
         const branchSelect = document.getElementById('branch-select');
         const loadBtn = document.getElementById('load-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const importBtn = document.getElementById('import-btn');
+        const importFile = document.getElementById('import-file');
         const itemsTable = document.getElementById('items-table');
         const loadingIndicator = document.getElementById('loading');
         const loadingStatus = document.getElementById('loading-status');
@@ -344,6 +351,9 @@
             
             // Event listeners
             loadBtn.addEventListener('click', loadItems);
+            saveBtn.addEventListener('click', saveData);
+            importBtn.addEventListener('click', () => importFile.click());
+            importFile.addEventListener('change', importData);
             
             typeButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -553,6 +563,9 @@
                 // Display items
                 displayItems();
                 
+                // Enable save button
+                saveBtn.disabled = false;
+                
                 loadingStatus.textContent = 'All items loaded successfully!';
                 setTimeout(() => {
                     loadingIndicator.style.display = 'none';
@@ -565,6 +578,81 @@
             } finally {
                 loadBtn.disabled = false;
             }
+        }
+        
+        // Save data to JSON file
+        function saveData() {
+            if (!allItems || Object.keys(allItems).length === 0) {
+                alert('No data to save. Please load items first.');
+                return;
+            }
+            
+            const dataToSave = {
+                branch: currentBranch,
+                timestamp: new Date().toISOString(),
+                items: allItems,
+                version: '1.0'
+            };
+            
+            const dataStr = JSON.stringify(dataToSave, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `crownicles-items-${currentBranch}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Import data from JSON file
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validate the imported data structure
+                    if (!importedData.items || !importedData.branch) {
+                        throw new Error('Invalid file format. Missing required fields.');
+                    }
+                    
+                    if (!importedData.items.weapons || !importedData.items.armors || !importedData.items.objects) {
+                        throw new Error('Invalid file format. Missing item types.');
+                    }
+                    
+                    // Load the imported data
+                    allItems = importedData.items;
+                    currentBranch = importedData.branch;
+                    
+                    // Update the branch selector
+                    branchSelect.value = currentBranch;
+                    
+                    // Cache the imported data
+                    itemCache[currentBranch] = JSON.parse(JSON.stringify(allItems));
+                    
+                    // Update UI
+                    updateStats();
+                    displayItems();
+                    
+                    // Enable save button
+                    saveBtn.disabled = false;
+                    
+                    alert(`Successfully imported ${allItems.weapons.length + allItems.armors.length + allItems.objects.length} items from branch "${currentBranch}"\nImported on: ${importedData.timestamp}`);
+                    
+                } catch (error) {
+                    console.error('Error importing data:', error);
+                    alert(`Failed to import data: ${error.message}`);
+                }
+            };
+            
+            reader.readAsText(file);
+            
+            // Reset the file input
+            event.target.value = '';
         }
         
         // Calculate weapon stats
