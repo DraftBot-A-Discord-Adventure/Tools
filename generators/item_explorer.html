@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crownicles Item Explorer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        select, button, input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .item-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .type-btn {
+            padding: 8px 16px;
+            background-color: #ecf0f1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #333;
+        }
+        .type-btn.active {
+            background-color: #3498db;
+            color: white;
+        }
+        #loading {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .table-container {
+            max-height: 600px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .rarity-0 { color: #777; } /* Basic */
+        .rarity-1 { color: #222; } /* Common */
+        .rarity-2 { color: #2ecc71; } /* Uncommon */
+        .rarity-3 { color: #3498db; } /* Exotic */
+        .rarity-4 { color: #9b59b6; } /* Rare */
+        .rarity-5 { color: #e67e22; } /* Special */
+        .rarity-6 { color: #f1c40f; } /* Epic */
+        .rarity-7 { color: #e74c3c; } /* Legendary */
+        .rarity-8 { color: #1abc9c; } /* Mythical */
+        .search-box {
+            flex-grow: 1;
+            max-width: 300px;
+        }
+        .stat-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .stats-display {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .stat-card {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 15px;
+            min-width: 200px;
+            flex: 1;
+        }
+        .stat-card h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Crownicles Item Explorer</h1>
+        
+        <div class="controls">
+            <select id="branch-select">
+                <option value="main">main</option>
+                <!-- Will be populated with branches -->
+            </select>
+            
+            <button id="load-btn">Load Items</button>
+            
+            <input type="text" id="search" class="search-box" placeholder="Search items...">
+            
+            <div style="flex-grow: 1;"></div>
+            
+            <div>
+                <label for="rarity-filter">Rarity: </label>
+                <select id="rarity-filter">
+                    <option value="all">All</option>
+                    <option value="0">Basic (0)</option>
+                    <option value="1">Common (1)</option>
+                    <option value="2">Uncommon (2)</option>
+                    <option value="3">Exotic (3)</option>
+                    <option value="4">Rare (4)</option>
+                    <option value="5">Special (5)</option>
+                    <option value="6">Epic (6)</option>
+                    <option value="7">Legendary (7)</option>
+                    <option value="8">Mythical (8)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="item-type-selector">
+            <button class="type-btn active" data-type="all">All Items</button>
+            <button class="type-btn" data-type="weapons">Weapons</button>
+            <button class="type-btn" data-type="armors">Armors</button>
+            <button class="type-btn" data-type="objects">Objects</button>
+        </div>
+        
+        <div id="loading">
+            <div class="loader"></div>
+            <p>Loading items data...</p>
+        </div>
+        
+        <div class="stats-display">
+            <div class="stat-card">
+                <h3>Items Loaded</h3>
+                <p>Weapons: <span id="weapons-count">0</span></p>
+                <p>Armors: <span id="armors-count">0</span></p>
+                <p>Objects: <span id="objects-count">0</span></p>
+                <p>Total: <span id="total-count">0</span></p>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Rarity Distribution</h3>
+                <div id="rarity-stats"></div>
+            </div>
+        </div>
+        
+        <div class="stat-info">
+            <strong>Item System Info:</strong> 
+            <p>
+                Weapons provide attack (100%), defense (75% of formula), and speed (50% of formula).<br>
+                Armors provide defense (100%), attack (75% of formula), and speed (50% of formula).<br>
+                Objects provide direct stat bonuses based on their nature type.
+            </p>
+        </div>
+        
+        <div class="table-container">
+            <table id="items-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Rarity</th>
+                        <th>Type</th>
+                        <th>Raw Attack</th>
+                        <th>Raw Defense</th>
+                        <th>Raw Speed</th>
+                        <th>Final Attack</th>
+                        <th>Final Defense</th>
+                        <th>Final Speed</th>
+                        <th>Nature</th>
+                        <th>Power</th>
+                        <th>Tags</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Items will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Constants for rarity multipliers and calculations
+        const RARITY_MULTIPLIERS = [1.0, 1.5, 2.1, 2.8, 3.6, 4.5, 5.5, 6.6, 6.7];
+        const RARITY_NAMES = ["Basic", "Common", "Uncommon", "Exotic", "Rare", "Special", "Epic", "Legendary", "Mythical"];
+        const NATURE_NAMES = ["None", "Health", "Speed", "Attack", "Defense", "Time Speedup", "Money", "Energy"];
+        
+        // Item data storage
+        let allItems = {
+            weapons: [],
+            armors: [],
+            objects: []
+        };
+        
+        // DOM elements
+        const branchSelect = document.getElementById('branch-select');
+        const loadBtn = document.getElementById('load-btn');
+        const itemsTable = document.getElementById('items-table');
+        const loadingIndicator = document.getElementById('loading');
+        const typeButtons = document.querySelectorAll('.type-btn');
+        const searchInput = document.getElementById('search');
+        const rarityFilter = document.getElementById('rarity-filter');
+        
+        // Stats elements
+        const weaponsCount = document.getElementById('weapons-count');
+        const armorsCount = document.getElementById('armors-count');
+        const objectsCount = document.getElementById('objects-count');
+        const totalCount = document.getElementById('total-count');
+        const rarityStats = document.getElementById('rarity-stats');
+        
+        // Current state
+        let currentType = 'all';
+        let currentBranch = 'main';
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBranches();
+            
+            // Event listeners
+            loadBtn.addEventListener('click', loadItems);
+            
+            typeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    typeButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentType = btn.dataset.type;
+                    displayItems();
+                });
+            });
+            
+            searchInput.addEventListener('input', displayItems);
+            rarityFilter.addEventListener('change', displayItems);
+        });
+        
+        // Load branches from GitHub
+        async function loadBranches() {
+            try {
+                const response = await fetch('https://api.github.com/repos/Crownicles/Crownicles/branches');
+                if (!response.ok) throw new Error('Failed to fetch branches');
+                
+                const branches = await response.json();
+                
+                // Clear existing options except the first one (main)
+                while (branchSelect.options.length > 1) {
+                    branchSelect.remove(1);
+                }
+                
+                // Add branches
+                branches.forEach(branch => {
+                    if (branch.name !== 'main') { // Skip main as it's already there
+                        const option = document.createElement('option');
+                        option.value = branch.name;
+                        option.textContent = branch.name;
+                        branchSelect.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading branches:', error);
+                alert('Failed to load branches. Please try again later.');
+            }
+        }
+        
+        // Load items from the selected branch
+        async function loadItems() {
+            currentBranch = branchSelect.value;
+            loadingIndicator.style.display = 'block';
+            
+            try {
+                // Reset item data
+                allItems = {
+                    weapons: [],
+                    armors: [],
+                    objects: []
+                };
+                
+                // Load each item type
+                await Promise.all([
+                    loadItemType('weapons', 99),
+                    loadItemType('armors', 65),
+                    loadItemType('objects', 93)
+                ]);
+                
+                // Update stats
+                updateStats();
+                
+                // Display items
+                displayItems();
+            } catch (error) {
+                console.error('Error loading items:', error);
+                alert('Failed to load items. Please check console for details.');
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        // Load specific item type
+        async function loadItemType(type, count) {
+            for (let i = 0; i < count; i++) {
+                try {
+                    const url = `https://raw.githubusercontent.com/Crownicles/Crownicles/${currentBranch}/Core/resources/${type}/${i}.json`;
+                    const response = await fetch(url);
+                    
+                    if (response.ok) {
+                        const item = await response.json();
+                        item.id = i;
+                        item.type = type.slice(0, -1); // Remove 's' to get singular form
+                        
+                        // Calculate final stats
+                        if (type === 'weapons') {
+                            calculateWeaponStats(item);
+                        } else if (type === 'armors') {
+                            calculateArmorStats(item);
+                        } else if (type === 'objects') {
+                            calculateObjectStats(item);
+                        }
+                        
+                        allItems[type].push(item);
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load ${type} item ${i}:`, error);
+                }
+            }
+        }
+        
+        // Calculate weapon stats
+        function calculateWeaponStats(item) {
+            const multiplier = RARITY_MULTIPLIERS[item.rarity] || 1;
+            
+            // Base values
+            item.rawAttack = item.rawAttack || 0;
+            item.rawDefense = item.rawDefense || 0;
+            item.rawSpeed = item.rawSpeed || 0;
+            
+            // Calculate using the formula from the summary
+            if (item.rawAttack) {
+                item.finalAttack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                            Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
+            } else {
+                item.finalAttack = 0;
+            }
+            
+            // Defense is 75% of attack formula
+            if (item.rawDefense) {
+                item.finalDefense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                             Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
+            } else if (item.finalAttack) {
+                item.finalDefense = Math.round(item.finalAttack * 0.75);
+            } else {
+                item.finalDefense = 0;
+            }
+            
+            // Speed is 50% of attack formula
+            if (item.rawSpeed) {
+                item.finalSpeed = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                           Math.pow(1.0569 + 0.1448 / multiplier, item.rawSpeed));
+            } else if (item.finalAttack) {
+                item.finalSpeed = Math.round(item.finalAttack * 0.5);
+            } else {
+                item.finalSpeed = 0;
+            }
+        }
+        
+        // Calculate armor stats
+        function calculateArmorStats(item) {
+            const multiplier = RARITY_MULTIPLIERS[item.rarity] || 1;
+            
+            // Base values
+            item.rawDefense = item.rawDefense || 0;
+            item.rawAttack = item.rawAttack || 0;
+            item.rawSpeed = item.rawSpeed || 0;
+            
+            // Calculate using the formula from the summary
+            if (item.rawDefense) {
+                item.finalDefense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                             Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
+            } else {
+                item.finalDefense = 0;
+            }
+            
+            // Attack is 75% of defense formula
+            if (item.rawAttack) {
+                item.finalAttack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                            Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
+            } else if (item.finalDefense) {
+                item.finalAttack = Math.round(item.finalDefense * 0.75);
+            } else {
+                item.finalAttack = 0;
+            }
+            
+            // Speed is 50% of defense formula
+            if (item.rawSpeed) {
+                item.finalSpeed = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                           Math.pow(1.0569 + 0.1448 / multiplier, item.rawSpeed));
+            } else if (item.finalDefense) {
+                item.finalSpeed = Math.round(item.finalDefense * 0.5);
+            } else {
+                item.finalSpeed = 0;
+            }
+        }
+        
+        // Calculate object stats
+        function calculateObjectStats(item) {
+            item.power = item.power || 0;
+            item.nature = item.nature || 0;
+            
+            // Objects provide direct stat bonuses based on their nature
+            if (item.nature === 3) { // ATTACK
+                item.finalAttack = item.power;
+                item.finalDefense = 0;
+                item.finalSpeed = 0;
+            } else if (item.nature === 4) { // DEFENSE
+                item.finalAttack = 0;
+                item.finalDefense = item.power;
+                item.finalSpeed = 0;
+            } else if (item.nature === 2) { // SPEED
+                item.finalAttack = 0;
+                item.finalDefense = 0;
+                item.finalSpeed = item.power;
+            } else {
+                item.finalAttack = 0;
+                item.finalDefense = 0;
+                item.finalSpeed = 0;
+            }
+        }
+        
+        // Display items in the table
+        function displayItems() {
+            const tbody = itemsTable.querySelector('tbody');
+            tbody.innerHTML = '';
+            
+            // Get filters
+            const searchTerm = searchInput.value.toLowerCase();
+            const rarityValue = rarityFilter.value;
+            
+            // Combine items based on current type filter
+            let itemsToDisplay = [];
+            if (currentType === 'all') {
+                itemsToDisplay = [
+                    ...allItems.weapons,
+                    ...allItems.armors,
+                    ...allItems.objects
+                ];
+            } else {
+                itemsToDisplay = allItems[currentType];
+            }
+            
+            // Apply filters
+            itemsToDisplay = itemsToDisplay.filter(item => {
+                // Search filter
+                const nameMatch = item.name && item.name.toLowerCase().includes(searchTerm);
+                const idMatch = item.id.toString().includes(searchTerm);
+                
+                // Rarity filter
+                const rarityMatch = rarityValue === 'all' || item.rarity.toString() === rarityValue;
+                
+                return (nameMatch || idMatch) && rarityMatch;
+            });
+            
+            // Sort by ID by default
+            itemsToDisplay.sort((a, b) => a.id - b.id);
+            
+            // Create table rows
+            itemsToDisplay.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${item.id}</td>
+                    <td>${item.name || 'N/A'}</td>
+                    <td class="rarity-${item.rarity}">${RARITY_NAMES[item.rarity]} (${item.rarity})</td>
+                    <td>${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</td>
+                    <td>${item.rawAttack || '0'}</td>
+                    <td>${item.rawDefense || '0'}</td>
+                    <td>${item.rawSpeed || '0'}</td>
+                    <td>${item.finalAttack || '0'}</td>
+                    <td>${item.finalDefense || '0'}</td>
+                    <td>${item.finalSpeed || '0'}</td>
+                    <td>${NATURE_NAMES[item.nature] || 'N/A'}</td>
+                    <td>${item.power || '0'}</td>
+                    <td>${item.tags ? item.tags.join(', ') : ''}</td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // Update statistics
+        function updateStats() {
+            weaponsCount.textContent = allItems.weapons.length;
+            armorsCount.textContent = allItems.armors.length;
+            objectsCount.textContent = allItems.objects.length;
+            totalCount.textContent = allItems.weapons.length + allItems.armors.length + allItems.objects.length;
+            
+            // Calculate rarity distribution
+            const rarityDistribution = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+            
+            Object.values(allItems).forEach(itemType => {
+                itemType.forEach(item => {
+                    if (item.rarity >= 0 && item.rarity <= 8) {
+                        rarityDistribution[item.rarity]++;
+                    }
+                });
+            });
+            
+            // Display rarity distribution
+            rarityStats.innerHTML = '';
+            RARITY_NAMES.forEach((name, index) => {
+                const percentage = Math.round((rarityDistribution[index] / parseInt(totalCount.textContent)) * 100) || 0;
+                rarityStats.innerHTML += `<p class="rarity-${index}">${name} (${index}): ${rarityDistribution[index]} (${percentage}%)</p>`;
+            });
+        }
+    </script>
+</body>
+</html>
