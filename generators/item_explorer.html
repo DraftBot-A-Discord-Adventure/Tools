@@ -204,6 +204,52 @@
         .api-status.warning {
             color: #e74c3c;
         }
+        
+        /* Conditional coloring styles */
+        .color-toggle {
+            margin-left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .color-toggle input[type="checkbox"] {
+            margin: 0;
+        }
+        
+        .color-toggle label {
+            font-size: 14px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        /* Color coding for stats */
+        .stat-excellent { background-color: #d4edda !important; } /* Green for top 20% */
+        .stat-good { background-color: #fff3cd !important; } /* Yellow for top 40% */
+        .stat-poor { background-color: #f8d7da !important; } /* Red for bottom 20% */
+        
+        /* Legend for color coding */
+        .color-legend {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            font-size: 12px;
+        }
+        
+        .color-legend.visible {
+            display: block;
+        }
+        
+        .legend-item {
+            display: inline-block;
+            margin-right: 15px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -241,6 +287,18 @@
                     <option value="8">Mythical (8)</option>
                 </select>
             </div>
+            
+            <div class="color-toggle">
+                <input type="checkbox" id="color-coding" />
+                <label for="color-coding">Color Coding</label>
+            </div>
+        </div>
+        
+        <div class="color-legend" id="color-legend">
+            <strong>Color Legend:</strong>
+            <span class="legend-item stat-excellent">Top 20% (Excellent)</span>
+            <span class="legend-item stat-good">Top 40% (Good)</span>
+            <span class="legend-item stat-poor">Bottom 20% (Poor)</span>
         </div>
         
         <div class="item-type-selector">
@@ -378,6 +436,24 @@
             
             searchInput.addEventListener('input', displayItems);
             rarityFilter.addEventListener('change', displayItems);
+            
+            // Color coding toggle
+            const colorToggle = document.getElementById('color-coding');
+            const colorLegend = document.getElementById('color-legend');
+            
+            colorToggle.addEventListener('change', () => {
+                if (colorToggle.checked) {
+                    colorLegend.classList.add('visible');
+                } else {
+                    colorLegend.classList.remove('visible');
+                    // Remove all color classes
+                    const allCells = itemsTable.querySelectorAll('td');
+                    allCells.forEach(cell => {
+                        cell.classList.remove('stat-excellent', 'stat-good', 'stat-poor');
+                    });
+                }
+                displayItems();
+            });
             
             // Setup column sorting
             setupSorting();
@@ -880,6 +956,7 @@
             // Get filters
             const searchTerm = searchInput.value.toLowerCase();
             const rarityValue = rarityFilter.value;
+            const colorCodingEnabled = document.getElementById('color-coding').checked;
             
             // Combine items based on current type filter
             let itemsToDisplay = [];
@@ -930,6 +1007,79 @@
                 `;
                 
                 tbody.appendChild(tr);
+            });
+            
+            // Apply color coding if enabled
+            if (colorCodingEnabled) {
+                applyColorCoding();
+            }
+        }
+        
+        // Apply color coding to the displayed items
+        function applyColorCoding() {
+            const rows = itemsTable.querySelectorAll('tbody tr');
+            if (rows.length === 0) return;
+            
+            // Collect all stat values for percentile calculation
+            const stats = {
+                rawAttack: [],
+                rawDefense: [],
+                rawSpeed: [],
+                finalAttack: [],
+                finalDefense: [],
+                finalSpeed: [],
+                power: []
+            };
+            
+            // Extract all values
+            rows.forEach(row => {
+                stats.rawAttack.push(parseFloat(row.cells[4].textContent) || 0);
+                stats.rawDefense.push(parseFloat(row.cells[5].textContent) || 0);
+                stats.rawSpeed.push(parseFloat(row.cells[6].textContent) || 0);
+                stats.finalAttack.push(parseFloat(row.cells[7].textContent) || 0);
+                stats.finalDefense.push(parseFloat(row.cells[8].textContent) || 0);
+                stats.finalSpeed.push(parseFloat(row.cells[9].textContent) || 0);
+                stats.power.push(parseFloat(row.cells[11].textContent) || 0);
+            });
+            
+            // Calculate percentiles for each stat
+            const percentiles = {};
+            Object.keys(stats).forEach(statKey => {
+                const sortedValues = stats[statKey].filter(val => val > 0).sort((a, b) => a - b);
+                if (sortedValues.length > 0) {
+                    percentiles[statKey] = {
+                        p80: sortedValues[Math.floor(sortedValues.length * 0.8)] || 0,
+                        p60: sortedValues[Math.floor(sortedValues.length * 0.6)] || 0,
+                        p20: sortedValues[Math.floor(sortedValues.length * 0.2)] || 0
+                    };
+                } else {
+                    percentiles[statKey] = { p80: 0, p60: 0, p20: 0 };
+                }
+            });
+            
+            // Apply color coding to each cell
+            rows.forEach(row => {
+                const cellIndices = [4, 5, 6, 7, 8, 9, 11]; // rawAttack, rawDefense, rawSpeed, finalAttack, finalDefense, finalSpeed, power
+                const statKeys = ['rawAttack', 'rawDefense', 'rawSpeed', 'finalAttack', 'finalDefense', 'finalSpeed', 'power'];
+                
+                cellIndices.forEach((cellIndex, i) => {
+                    const cell = row.cells[cellIndex];
+                    const value = parseFloat(cell.textContent) || 0;
+                    const statKey = statKeys[i];
+                    
+                    // Remove existing color classes
+                    cell.classList.remove('stat-excellent', 'stat-good', 'stat-poor');
+                    
+                    if (value > 0 && percentiles[statKey]) {
+                        if (value >= percentiles[statKey].p80) {
+                            cell.classList.add('stat-excellent');
+                        } else if (value >= percentiles[statKey].p60) {
+                            cell.classList.add('stat-good');
+                        } else if (value <= percentiles[statKey].p20) {
+                            cell.classList.add('stat-poor');
+                        }
+                    }
+                });
             });
         }
         
