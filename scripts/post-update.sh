@@ -3,7 +3,7 @@
 # Environment variables
 # - CONTAINER_NAME -> Name of the docker container
 # - FRESHSTATUS_API_KEY -> API key freshtatus
-# - FRESHSTATUS_DOMAIN -> Domain freshstatus (e.g. draftbot)
+# - FRESHSTATUS_DOMAIN -> Domain freshstatus (e.g. crownicles)
 
 logit()
 {

@@ -2,9 +2,9 @@
 
 # Environment variables
 # - CONTAINER_NAME -> Name of the docker container
-# - DRAFTBOT_SERVER_IP -> IP du webservice DraftBot
+# - DRAFTBOT_SERVER_IP -> IP du webservice Crownicles
 # - FRESHSTATUS_API_KEY -> API key freshtatus
-# - FRESHSTATUS_DOMAIN -> Domain freshstatus (e.g. draftbot)
+# - FRESHSTATUS_DOMAIN -> Domain freshstatus (e.g. crownicles)
 # - FRESHSTATUS_COMPONENT -> Component id to be put in maintenance
 
 logit()
