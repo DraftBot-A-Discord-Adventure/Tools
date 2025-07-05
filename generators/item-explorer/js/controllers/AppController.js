@@ -88,11 +88,8 @@ class AppController {
             this.updateColorLegendVisibility();
             this.updateDisplay();
         });
-
-        // Stat analysis toggle
-        this.elements.statAnalysis.addEventListener('change', () => {
-            this.updateDisplay();
-        });
+        
+        // Stat analysis is now always enabled - no checkbox to listen to
         
         // Type buttons
         this.elements.typeButtons.forEach(btn => {
@@ -149,7 +146,7 @@ class AppController {
 
     updateDisplay() {
         const useColorCoding = this.elements.colorCoding.checked;
-        const useStatAnalysis = this.elements.statAnalysis.checked;
+        const useStatAnalysis = true; // Always enabled now
         this.tableRenderer.displayItems(this.allItems, this.currentType, this.filters, this.sort, useColorCoding, useStatAnalysis);
     }
 

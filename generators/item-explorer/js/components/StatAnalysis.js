@@ -3,17 +3,11 @@ class StatAnalysis {
     constructor(elements, iconService) {
         this.elements = elements;
         this.iconService = iconService;
-        this.analysisEnabled = false;
-        this.initializeEventListeners();
+        this.analysisEnabled = true; // Always enabled now - no checkbox
+        // this.initializeEventListeners(); // No longer needed - no checkbox to listen to
     }
 
-    initializeEventListeners() {
-        // Analysis toggle
-        this.elements.statAnalysis.addEventListener('change', (e) => {
-            this.analysisEnabled = e.target.checked;
-            this.updateAnalysisLegendVisibility();
-        });
-    }
+    // initializeEventListeners() removed - no checkbox to manage
 
     updateAnalysisLegendVisibility() {
         this.elements.analysisLegend.style.display = this.analysisEnabled ? 'block' : 'none';
