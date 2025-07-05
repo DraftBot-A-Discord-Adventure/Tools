@@ -302,6 +302,21 @@
                 </select>
             </div>
             
+            <div id="nature-filter-container" style="display: none;">
+                <label for="nature-filter">Nature: </label>
+                <select id="nature-filter">
+                    <option value="all">All</option>
+                    <option value="0">None (0)</option>
+                    <option value="1">Health (1)</option>
+                    <option value="2">Speed (2)</option>
+                    <option value="3">Attack (3)</option>
+                    <option value="4">Defense (4)</option>
+                    <option value="5">Time Speedup (5)</option>
+                    <option value="6">Money (6)</option>
+                    <option value="7">Energy (7)</option>
+                </select>
+            </div>
+            
             <div class="color-toggle">
                 <input type="checkbox" id="color-coding" />
                 <label for="color-coding">Color Coding</label>
@@ -412,6 +427,8 @@
         const typeButtons = document.querySelectorAll('.type-btn');
         const searchInput = document.getElementById('search');
         const rarityFilter = document.getElementById('rarity-filter');
+        const natureFilter = document.getElementById('nature-filter');
+        const natureFilterContainer = document.getElementById('nature-filter-container');
         
         // Stats elements
         const weaponsCount = document.getElementById('weapons-count');
@@ -444,12 +461,14 @@
                     btn.classList.add('active');
                     currentType = btn.dataset.type;
                     updateColumnVisibility();
+                    updateNatureFilterVisibility();
                     displayItems();
                 });
             });
             
             searchInput.addEventListener('input', displayItems);
             rarityFilter.addEventListener('change', displayItems);
+            natureFilter.addEventListener('change', displayItems);
             
             // Color coding toggle
             const colorToggle = document.getElementById('color-coding');
@@ -931,6 +950,17 @@
             return 0;
         }
         
+        // Update nature filter visibility based on current type
+        function updateNatureFilterVisibility() {
+            if (currentType === 'objects' || currentType === 'potions') {
+                natureFilterContainer.style.display = 'block';
+            } else {
+                natureFilterContainer.style.display = 'none';
+                // Reset nature filter when hidden
+                natureFilter.value = 'all';
+            }
+        }
+        
         // Update column visibility based on current type
         function updateColumnVisibility() {
             const table = itemsTable;
@@ -997,6 +1027,7 @@
             // Get filters
             const searchTerm = searchInput.value.toLowerCase();
             const rarityValue = rarityFilter.value;
+            const natureValue = natureFilter.value;
             const colorCodingEnabled = document.getElementById('color-coding').checked;
             
             // Combine items based on current type filter
@@ -1021,7 +1052,11 @@
                 // Rarity filter
                 const rarityMatch = rarityValue === 'all' || item.rarity.toString() === rarityValue;
                 
-                return (nameMatch || idMatch) && rarityMatch;
+                // Nature filter (only for objects and potions)
+                const natureMatch = (currentType === 'objects' || currentType === 'potions') ? 
+                    (natureValue === 'all' || item.nature.toString() === natureValue) : true;
+                
+                return (nameMatch || idMatch) && rarityMatch && natureMatch;
             });
             
             // Sort items by the selected column and direction
