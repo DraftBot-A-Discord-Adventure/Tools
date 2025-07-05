@@ -499,8 +499,8 @@
         
         // Current state
         let currentType = 'all';
-        let currentBranch = 'master'; // Changed from 'main' to 'master'
-        let remainingApiCalls = 5000; // GitHub API default limit
+        let currentBranch = 'master';
+        let remainingApiCalls = 5000;
         let currentSortColumn = 'id';
         let currentSortDirection = 'asc';
         
@@ -601,7 +601,7 @@
                 
                 // Add branches
                 branches.forEach(branch => {
-                    if (branch.name !== 'master') { // Skip master as it's already there
+                    if (branch.name !== 'master') {
                         const option = document.createElement('option');
                         option.value = branch.name;
                         option.textContent = branch.name;
@@ -668,7 +668,7 @@
             
             // Check if we already have the data for this branch in cache
             if (itemCache[currentBranch]) {
-                allItems = JSON.parse(JSON.stringify(itemCache[currentBranch])); // Deep clone
+                allItems = JSON.parse(JSON.stringify(itemCache[currentBranch]));
                 updateStats();
                 displayItems();
                 saveBtn.disabled = false;
@@ -738,7 +738,7 @@
                                 .then(item => {
                                     const id = parseInt(file.name.split('.')[0]);
                                     item.id = id;
-                                    item.type = type.slice(0, -1); // Remove 's' to get singular form
+                                    item.type = type.slice(0, -1);
                                     
                                     // Get name from i18n or generate default
                                     const i18nName = itemNames[type] && itemNames[type][id.toString()];
@@ -892,19 +892,21 @@
         function calculateWeaponStats(item) {
             const multiplier = RARITY_MULTIPLIERS[item.rarity] || 1;
             
-            // Weapons have rawAttack and optional defense/speed bonuses
+            // Store original raw values
             item.rawAttack = item.rawAttack || 0;
-            item.rawDefense = 0; // Weapons never have raw defense
+            item.rawDefense = 0; // Weapons never have rawDefense
             
-            // Calculate attack (final attack for weapons)
-            if (item.rawAttack) {
-                item.attack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                       Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
+            // Weapons calculate attack from rawAttack + any bonus attack
+            if (item.rawAttack > 0) {
+                const calculatedAttack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                                  Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
+                const bonusAttack = item.attack || 0;
+                item.attack = calculatedAttack + bonusAttack;
             } else {
-                item.attack = 0;
+                item.attack = item.attack || 0; // Only bonus attack
             }
             
-            // Load actual defense and speed bonuses from JSON (not calculated)
+            // Weapons don't calculate defense - it's a direct bonus value
             item.defense = item.defense || 0;
             item.speed = item.speed || 0;
         }
@@ -913,20 +915,23 @@
         function calculateArmorStats(item) {
             const multiplier = RARITY_MULTIPLIERS[item.rarity] || 1;
             
-            // Armors have rawDefense and optional attack/speed bonuses
+            // Store original raw values
+            item.rawAttack = item.rawAttack || 0;
             item.rawDefense = item.rawDefense || 0;
-            item.rawAttack = 0; // Armors never have raw attack
             
-            // Calculate defense (final defense for armors)
-            if (item.rawDefense) {
-                item.defense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                        Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
+            // Armors don't calculate attack - it's a direct bonus value
+            item.attack = item.attack || 0;
+            
+            // Armors calculate defense from rawDefense + any bonus defense
+            if (item.rawDefense > 0) {
+                const calculatedDefense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                                   Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
+                const bonusDefense = item.defense || 0;
+                item.defense = calculatedDefense + bonusDefense;
             } else {
-                item.defense = 0;
+                item.defense = item.defense || 0; // Only bonus defense
             }
             
-            // Load actual attack and speed bonuses from JSON (not calculated)
-            item.attack = item.attack || 0;
             item.speed = item.speed || 0;
         }
         
@@ -1164,7 +1169,7 @@
                 power: []
             };
             
-            // Extract all values - corrected indices for fusioned structure
+            // Extract all values
             rows.forEach(row => {
                 stats.rawAttack.push(parseFloat(row.cells[4].textContent) || 0);
                 stats.rawDefense.push(parseFloat(row.cells[5].textContent) || 0);
@@ -1177,7 +1182,7 @@
             // Calculate percentiles for each stat
             const percentiles = {};
             Object.keys(stats).forEach(statKey => {
-                const sortedValues = stats[statKey].sort((a, b) => a - b); // Include all values, even 0 and negative
+                const sortedValues = stats[statKey].sort((a, b) => a - b);
                 if (sortedValues.length > 0) {
                     percentiles[statKey] = {
                         p80: sortedValues[Math.floor(sortedValues.length * 0.8)] || 0,
@@ -1189,7 +1194,7 @@
                 }
             });
             
-            // Apply color coding to each cell - corrected indices for fusioned structure
+            // Apply color coding to each cell
             rows.forEach(row => {
                 const cellIndices = [4, 5, 6, 7, 8, 10]; // rawAttack, rawDefense, attack, defense, speed, power
                 const statKeys = ['rawAttack', 'rawDefense', 'attack', 'defense', 'speed', 'power'];
@@ -1202,7 +1207,7 @@
                     // Remove existing color classes
                     cell.classList.remove('stat-excellent', 'stat-good', 'stat-poor');
                     
-                    // Apply color coding to all values, including 0 and negative
+                    // Apply color coding
                     if (percentiles[statKey]) {
                         if (value >= percentiles[statKey].p80) {
                             cell.classList.add('stat-excellent');
@@ -1245,3 +1250,4 @@
     </script>
 </body>
 </html>
+
