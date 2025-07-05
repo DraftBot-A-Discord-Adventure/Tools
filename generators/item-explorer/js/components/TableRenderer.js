@@ -29,6 +29,17 @@ class TableRenderer {
         // Apply filters
         itemsToDisplay = this.filterManager.filterItems(itemsToDisplay, filters);
         
+        // Calculate performance scores based on visible items
+        let performanceData = null;
+        if (useStatAnalysis && this.statAnalysis) {
+            performanceData = this.statAnalysis.calculatePerformanceScores(itemsToDisplay, currentType);
+            // Pass performance data to filter manager for sorting
+            this.filterManager.setPerformanceData(performanceData);
+        } else {
+            // Clear performance data when not using stat analysis
+            this.filterManager.setPerformanceData(null);
+        }
+        
         // Apply sorting
         itemsToDisplay = this.filterManager.sortItems(itemsToDisplay, sort);
         
@@ -39,12 +50,6 @@ class TableRenderer {
         let colorRanges = null;
         if (useColorCoding) {
             colorRanges = this.calculateColorRanges(itemsToDisplay);
-        }
-
-        // Calculate performance scores based on visible items
-        let performanceData = null;
-        if (useStatAnalysis && this.statAnalysis) {
-            performanceData = this.statAnalysis.calculatePerformanceScores(itemsToDisplay, currentType);
         }
         
         // Clear previous analysis highlighting

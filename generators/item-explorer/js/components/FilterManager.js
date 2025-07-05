@@ -2,6 +2,12 @@
 class FilterManager {
     constructor(elements) {
         this.elements = elements;
+        this.performanceData = null; // Store performance data for sorting
+    }
+
+    // Set performance data for sorting
+    setPerformanceData(performanceData) {
+        this.performanceData = performanceData;
     }
 
     updateColumnVisibility(currentType) {
@@ -95,6 +101,21 @@ class FilterManager {
         } else if (column === 'nature') {
             valueA = a.nature || 0;
             valueB = b.nature || 0;
+        } else if (column === 'performance') {
+            // Handle performance column specially
+            if (this.performanceData) {
+                const keyA = `${a.type}-${a.id}`;
+                const keyB = `${b.type}-${b.id}`;
+                const dataA = this.performanceData[keyA];
+                const dataB = this.performanceData[keyB];
+                
+                // Use score for numeric comparison, fallback to grade letter comparison
+                valueA = dataA ? dataA.score : -1;
+                valueB = dataB ? dataB.score : -1;
+            } else {
+                valueA = 0;
+                valueB = 0;
+            }
         } else {
             valueA = a[column] || 0;
             valueB = b[column] || 0;
