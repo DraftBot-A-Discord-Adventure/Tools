@@ -1083,7 +1083,7 @@
             // Calculate percentiles for each stat
             const percentiles = {};
             Object.keys(stats).forEach(statKey => {
-                const sortedValues = stats[statKey].filter(val => val > 0).sort((a, b) => a - b);
+                const sortedValues = stats[statKey].sort((a, b) => a - b); // Include all values, even 0 and negative
                 if (sortedValues.length > 0) {
                     percentiles[statKey] = {
                         p80: sortedValues[Math.floor(sortedValues.length * 0.8)] || 0,
@@ -1108,7 +1108,8 @@
                     // Remove existing color classes
                     cell.classList.remove('stat-excellent', 'stat-good', 'stat-poor');
                     
-                    if (value > 0 && percentiles[statKey]) {
+                    // Apply color coding to all values, including 0 and negative
+                    if (percentiles[statKey]) {
                         if (value >= percentiles[statKey].p80) {
                             cell.classList.add('stat-excellent');
                         } else if (value >= percentiles[statKey].p60) {
