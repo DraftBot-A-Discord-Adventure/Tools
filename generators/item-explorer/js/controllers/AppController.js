@@ -2,11 +2,12 @@
 class AppController {
     constructor() {
         this.elements = new DOMElements();
-        this.itemLoader = new ItemLoader(this.elements);
+        this.iconService = new IconService(this.elements); // Instance partagée
+        this.itemLoader = new ItemLoader(this.elements, this.iconService);
         this.dataManager = new DataManager(this.elements);
         this.filterManager = new FilterManager(this.elements);
         this.statsManager = new StatsManager(this.elements);
-        this.tableRenderer = new TableRenderer(this.elements);
+        this.tableRenderer = new TableRenderer(this.elements, this.iconService); // Passer l'instance partagée
         
         this.allItems = { weapons: [], armors: [], objects: [], potions: [] };
         this.currentBranch = CONSTANTS.DEFAULT_BRANCH;

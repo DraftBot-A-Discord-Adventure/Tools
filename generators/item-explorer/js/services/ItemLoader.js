@@ -1,8 +1,8 @@
 // Item loading service
 class ItemLoader {
-    constructor(elements) {
+    constructor(elements, iconService) {
         this.elements = elements;
-        this.iconService = new IconService(elements);
+        this.iconService = iconService || new IconService(elements); // Utiliser l'instance partagée
         this.itemCalculator = new ItemCalculator();
         this.remainingApiCalls = CONSTANTS.GITHUB_API_LIMIT;
     }

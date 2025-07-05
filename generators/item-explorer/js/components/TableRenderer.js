@@ -1,8 +1,8 @@
 // Table rendering component
 class TableRenderer {
-    constructor(elements) {
+    constructor(elements, iconService) {
         this.elements = elements;
-        this.iconService = new IconService(elements);
+        this.iconService = iconService || new IconService(elements); // Utiliser l'instance partagée
         this.filterManager = new FilterManager(elements);
     }
 
