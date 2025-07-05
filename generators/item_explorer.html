@@ -945,7 +945,8 @@
                 branch: currentBranch,
                 timestamp: new Date().toISOString(),
                 items: allItems,
-                version: '1.0'
+                icons: crowniclesIcons, // Include icons in save data
+                version: '1.1'
             };
             
             const dataStr = JSON.stringify(dataToSave, null, 2);
@@ -982,6 +983,19 @@
                     allItems = importedData.items;
                     currentBranch = importedData.branch;
                     
+                    // Load icons if available in imported data, otherwise use fallback
+                    if (importedData.icons) {
+                        crowniclesIcons = importedData.icons;
+                        console.log('Loaded icons from imported data');
+                    } else {
+                        console.log('No icons in imported data, loading from repository...');
+                        // Load icons from repository for older saved files
+                        loadCrowniclesIcons(currentBranch).then(() => {
+                            updateStats();
+                            displayItems();
+                        });
+                    }
+                    
                     // Update the branch selector
                     branchSelect.value = currentBranch;
                     
@@ -995,7 +1009,8 @@
                     // Enable save button
                     saveBtn.disabled = false;
                     
-                    alert(`Successfully imported ${allItems.weapons.length + allItems.armors.length + allItems.objects.length + allItems.potions.length} items from branch "${currentBranch}"\nImported on: ${importedData.timestamp}`);
+                    const versionInfo = importedData.version ? ` (v${importedData.version})` : '';
+                    alert(`Successfully imported ${allItems.weapons.length + allItems.armors.length + allItems.objects.length + allItems.potions.length} items from branch "${currentBranch}"${versionInfo}\nImported on: ${importedData.timestamp}`);
                     
                 } catch (error) {
                     console.error('Error importing data:', error);
