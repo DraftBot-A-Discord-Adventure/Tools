@@ -164,19 +164,29 @@
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
         }
 
-        .stat-number {
-            font-size: 2em;
-            font-weight: bold;
-            color: #b95e4b;
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(185, 94, 75, 0.3);
+            border-color: #b95e4b;
         }
 
-        .stat-label {
-            color: #6c757d;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .stat-item.active {
+            border-color: #b95e4b;
+            background: linear-gradient(135deg, #b95e4b 0%, #e67e22 100%);
+            color: white;
+        }
+
+        .stat-item.active .stat-number {
+            color: white;
+        }
+
+        .stat-item.active .stat-label {
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .table-container {
@@ -201,6 +211,31 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+
+        th:hover {
+            background: linear-gradient(45deg, #a54d3e, #d16d1a);
+        }
+
+        th.sortable::after {
+            content: " ↕️";
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+
+        th.sorted-asc::after {
+            content: " ▲";
+            font-size: 0.8em;
+            color: #fff;
+        }
+
+        th.sorted-desc::after {
+            content: " ▼";
+            font-size: 0.8em;
+            color: #fff;
         }
 
         td {
@@ -411,6 +446,9 @@
                 this.isLoading = false;
                 this.cachePrefix = 'ckwalide_cache_';
                 this.cacheExpiry = 30 * 60 * 1000; // 30 minutes
+                this.currentSort = { column: null, direction: 'asc' };
+                this.currentDisplayData = [];
+                this.currentFilter = null; // 'item', 'pet', 'place', ou null pour tout
                 
                 this.elements = {
                     branchSelect: document.getElementById('branch-select'),
@@ -438,6 +476,174 @@
             initializeEventListeners() {
                 this.elements.loadBtn.addEventListener('click', () => this.loadData());
                 this.elements.searchInput.addEventListener('input', (e) => this.search(e.target.value));
+                
+                // Ajouter les événements de tri sur les en-têtes
+                this.initializeSortListeners();
+                
+                // Ajouter les événements de filtrage sur les statistiques
+                this.initializeStatListeners();
+            }
+
+            initializeStatListeners() {
+                const statItems = this.elements.stats.querySelectorAll('.stat-item');
+                
+                // Items
+                statItems[0].addEventListener('click', () => this.filterByCategory('item'));
+                // Familiers
+                statItems[1].addEventListener('click', () => this.filterByCategory('pet'));
+                // Lieux
+                statItems[2].addEventListener('click', () => this.filterByCategory('place'));
+                // Total (afficher tout)
+                statItems[3].addEventListener('click', () => this.filterByCategory(null));
+            }
+
+            filterByCategory(category) {
+                // Mettre à jour le filtre actuel
+                this.currentFilter = category;
+                
+                // Mettre à jour les indicateurs visuels des stats
+                this.updateStatIndicators(category);
+                
+                // Appliquer le filtrage
+                this.applyCurrentFilters();
+            }
+
+            updateStatIndicators(activeCategory) {
+                const statItems = this.elements.stats.querySelectorAll('.stat-item');
+                
+                statItems.forEach((item, index) => {
+                    item.classList.remove('active');
+                });
+                
+                // Activer la stat correspondante
+                if (activeCategory === 'item') {
+                    statItems[0].classList.add('active');
+                } else if (activeCategory === 'pet') {
+                    statItems[1].classList.add('active');
+                } else if (activeCategory === 'place') {
+                    statItems[2].classList.add('active');
+                } else if (activeCategory === null) {
+                    statItems[3].classList.add('active');
+                }
+            }
+
+            applyCurrentFilters() {
+                let filteredData = [...this.allData];
+                
+                // Appliquer le filtre de catégorie si actif
+                if (this.currentFilter) {
+                    filteredData = filteredData.filter(item => item.category === this.currentFilter);
+                }
+                
+                // Appliquer le filtre de recherche si actif
+                const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
+                if (searchTerm) {
+                    filteredData = filteredData.filter(item => 
+                        item.name.toLowerCase().includes(searchTerm) ||
+                        item.id.toString().includes(searchTerm) ||
+                        item.type.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                this.displayResults(filteredData);
+            }
+
+            initializeSortListeners() {
+                const headers = this.elements.table.querySelectorAll('th');
+                headers.forEach((header, index) => {
+                    header.classList.add('sortable');
+                    header.addEventListener('click', () => this.sortByColumn(index));
+                });
+            }
+
+            sortByColumn(columnIndex) {
+                const columns = ['emoji', 'name', 'type', 'id'];
+                const column = columns[columnIndex];
+                
+                // Déterminer la direction du tri
+                if (this.currentSort.column === column) {
+                    this.currentSort.direction = this.currentSort.direction === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.currentSort.column = column;
+                    this.currentSort.direction = 'asc';
+                }
+                
+                // Appliquer le tri
+                this.applySorting();
+                
+                // Mettre à jour les indicateurs visuels
+                this.updateSortIndicators(columnIndex);
+            }
+
+            applySorting() {
+                if (!this.currentSort.column) return;
+                
+                this.currentDisplayData.sort((a, b) => {
+                    let valueA, valueB;
+                    
+                    switch (this.currentSort.column) {
+                        case 'emoji':
+                            valueA = a.emoji;
+                            valueB = b.emoji;
+                            break;
+                        case 'name':
+                            valueA = a.name.toLowerCase();
+                            valueB = b.name.toLowerCase();
+                            break;
+                        case 'type':
+                            valueA = a.type.toLowerCase();
+                            valueB = b.type.toLowerCase();
+                            break;
+                        case 'id':
+                            valueA = a.id;
+                            valueB = b.id;
+                            break;
+                        default:
+                            return 0;
+                    }
+                    
+                    if (valueA < valueB) {
+                        return this.currentSort.direction === 'asc' ? -1 : 1;
+                    }
+                    if (valueA > valueB) {
+                        return this.currentSort.direction === 'asc' ? 1 : -1;
+                    }
+                    return 0;
+                });
+                
+                // Re-rendre le tableau avec les données triées
+                this.renderTable();
+            }
+
+            updateSortIndicators(activeColumnIndex) {
+                const headers = this.elements.table.querySelectorAll('th');
+                
+                headers.forEach((header, index) => {
+                    header.classList.remove('sorted-asc', 'sorted-desc');
+                    
+                    if (index === activeColumnIndex) {
+                        if (this.currentSort.direction === 'asc') {
+                            header.classList.add('sorted-asc');
+                        } else {
+                            header.classList.add('sorted-desc');
+                        }
+                    }
+                });
+            }
+
+            renderTable() {
+                this.elements.tableBody.innerHTML = '';
+                
+                this.currentDisplayData.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="emoji">${item.emoji}</td>
+                        <td>${item.name}</td>
+                        <td><span class="type-item type-${item.type}">${item.type}</span></td>
+                        <td><strong>${item.id}</strong></td>
+                    `;
+                    this.elements.tableBody.appendChild(row);
+                });
             }
 
             checkCache() {
@@ -709,8 +915,9 @@
                                 const pet = await petResponse.json();
                                 const id = parseInt(file.name.split('.')[0]);
                                 
-                                const petName = this.petNames[id.toString()] && this.petNames[id.toString()].male
-                                    ? this.petNames[id.toString()].male
+                                // Utiliser le nom masculin depuis le format {id}_male
+                                const petName = this.petNames[`${id}_male`] 
+                                    ? this.petNames[`${id}_male`]
                                     : `Familier ${id}`;
                                 
                                 return {
@@ -829,23 +1036,12 @@
             }
 
             search(query) {
-                if (!query.trim()) {
-                    this.displayResults(this.allData);
-                    return;
-                }
-
-                const searchTerm = query.toLowerCase();
-                const filtered = this.allData.filter(item => 
-                    item.name.toLowerCase().includes(searchTerm) ||
-                    item.id.toString().includes(searchTerm) ||
-                    item.type.toLowerCase().includes(searchTerm)
-                );
-
-                this.displayResults(filtered);
+                // La recherche travaille maintenant avec le filtre actuel
+                this.applyCurrentFilters();
             }
 
             displayResults(data) {
-                this.elements.tableBody.innerHTML = '';
+                this.currentDisplayData = [...data];
                 
                 if (data.length === 0) {
                     this.elements.table.style.display = 'none';
@@ -857,19 +1053,17 @@
                 this.elements.table.style.display = 'table';
                 this.elements.noData.style.display = 'none';
 
-                // Trier par ID
-                data.sort((a, b) => a.id - b.id);
-
-                data.forEach(item => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="emoji">${item.emoji}</td>
-                        <td>${item.name}</td>
-                        <td><span class="type-item type-${item.type}">${item.type}</span></td>
-                        <td><strong>${item.id}</strong></td>
-                    `;
-                    this.elements.tableBody.appendChild(row);
-                });
+                // Appliquer le tri actuel si il y en a un
+                if (this.currentSort.column) {
+                    this.applySorting();
+                } else {
+                    // Tri par défaut par ID
+                    this.currentDisplayData.sort((a, b) => a.id - b.id);
+                    this.renderTable();
+                }
+                
+                // Réinitialiser les listeners de tri après affichage du tableau
+                this.initializeSortListeners();
             }
 
             showError(message) {
