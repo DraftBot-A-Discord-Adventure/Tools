@@ -256,6 +256,59 @@
             border: 1px solid #f5c6cb;
         }
 
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px;
+            font-weight: 500;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .api-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 10px 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #dee2e6;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .api-status.visible {
+            display: block;
+        }
+
+        .api-status-good {
+            border-left: 4px solid #28a745;
+        }
+
+        .api-status-warning {
+            border-left: 4px solid #ffc107;
+        }
+
+        .api-status-danger {
+            border-left: 4px solid #dc3545;
+        }
+
+        .api-limit-text {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .api-reset-text {
+            color: #6c757d;
+            font-size: 11px;
+        }
+
         @media (max-width: 768px) {
             .control-row {
                 flex-direction: column;
@@ -343,6 +396,11 @@
                 Cliquez sur "Charger les données" pour commencer
             </div>
         </div>
+
+        <div class="api-status" id="api-status">
+            <div class="api-limit-text" id="api-limit-text"></div>
+            <div class="api-reset-text" id="api-reset-text"></div>
+        </div>
     </div>
 
     <script>
@@ -351,6 +409,8 @@
                 this.allData = [];
                 this.currentBranch = 'master';
                 this.isLoading = false;
+                this.cachePrefix = 'ckwalide_cache_';
+                this.cacheExpiry = 30 * 60 * 1000; // 30 minutes
                 
                 this.elements = {
                     branchSelect: document.getElementById('branch-select'),
@@ -365,10 +425,14 @@
                     itemsCount: document.getElementById('items-count'),
                     petsCount: document.getElementById('pets-count'),
                     placesCount: document.getElementById('places-count'),
-                    totalCount: document.getElementById('total-count')
+                    totalCount: document.getElementById('total-count'),
+                    apiStatus: document.getElementById('api-status'),
+                    apiLimitText: document.getElementById('api-limit-text'),
+                    apiResetText: document.getElementById('api-reset-text')
                 };
 
                 this.initializeEventListeners();
+                this.checkCache();
             }
 
             initializeEventListeners() {
@@ -376,11 +440,89 @@
                 this.elements.searchInput.addEventListener('input', (e) => this.search(e.target.value));
             }
 
-            async loadData() {
+            checkCache() {
+                const cacheKey = `${this.cachePrefix}${this.currentBranch}`;
+                const cached = localStorage.getItem(cacheKey);
+                
+                if (cached) {
+                    try {
+                        const { data, timestamp } = JSON.parse(cached);
+                        const now = Date.now();
+                        
+                        if (now - timestamp < this.cacheExpiry) {
+                            this.allData = data;
+                            this.updateStats();
+                            this.displayResults(this.allData);
+                            this.elements.searchInput.disabled = false;
+                            this.elements.searchInput.placeholder = "Recherchez un nom, ID ou type...";
+                            this.showCacheInfo();
+                            return;
+                        } else {
+                            localStorage.removeItem(cacheKey);
+                        }
+                    } catch (error) {
+                        console.warn('Cache corrompu, suppression:', error);
+                        localStorage.removeItem(cacheKey);
+                    }
+                }
+            }
+
+            saveToCache() {
+                const cacheKey = `${this.cachePrefix}${this.currentBranch}`;
+                const cacheData = {
+                    data: this.allData,
+                    timestamp: Date.now()
+                };
+                
+                try {
+                    localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+                } catch (error) {
+                    console.warn('Impossible de sauvegarder en cache:', error);
+                }
+            }
+
+            showCacheInfo() {
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'status-message status-info';
+                infoDiv.textContent = 'Données chargées depuis le cache (30min)';
+                
+                const container = document.querySelector('.container');
+                container.appendChild(infoDiv);
+                
+                setTimeout(() => infoDiv.remove(), 3000);
+            }
+
+            async loadData(forceRefresh = false) {
                 if (this.isLoading) return;
                 
                 this.isLoading = true;
                 this.currentBranch = this.elements.branchSelect.value;
+                
+                // Vérifier le cache si ce n'est pas un refresh forcé
+                if (!forceRefresh) {
+                    const cacheKey = `${this.cachePrefix}${this.currentBranch}`;
+                    const cached = localStorage.getItem(cacheKey);
+                    
+                    if (cached) {
+                        try {
+                            const { data, timestamp } = JSON.parse(cached);
+                            const now = Date.now();
+                            
+                            if (now - timestamp < this.cacheExpiry) {
+                                this.allData = data;
+                                this.updateStats();
+                                this.displayResults(this.allData);
+                                this.elements.searchInput.disabled = false;
+                                this.elements.searchInput.placeholder = "Recherchez un nom, ID ou type...";
+                                this.showCacheInfo();
+                                this.isLoading = false;
+                                return;
+                            }
+                        } catch (error) {
+                            console.warn('Cache corrompu:', error);
+                        }
+                    }
+                }
                 
                 this.elements.loading.style.display = 'block';
                 this.elements.stats.style.display = 'none';
@@ -402,6 +544,9 @@
                         this.loadPlaces()
                     ]);
                     
+                    // Sauvegarder en cache
+                    this.saveToCache();
+                    
                     this.updateStats();
                     this.elements.searchInput.disabled = false;
                     this.elements.searchInput.placeholder = "Recherchez un nom, ID ou type...";
@@ -417,6 +562,60 @@
                 }
             }
 
+            async makeApiRequest(url) {
+                try {
+                    const response = await fetch(url);
+                    
+                    // Extraire les informations de limite d'API des headers
+                    const remaining = response.headers.get('X-RateLimit-Remaining');
+                    const limit = response.headers.get('X-RateLimit-Limit');
+                    const reset = response.headers.get('X-RateLimit-Reset');
+                    
+                    if (remaining !== null && limit !== null) {
+                        this.updateApiStatus(parseInt(remaining), parseInt(limit), reset ? parseInt(reset) : null);
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    console.error('Erreur lors de la requête API:', error);
+                    throw error;
+                }
+            }
+
+            updateApiStatus(remaining, limit, resetTimestamp) {
+                const percentage = (remaining / limit) * 100;
+                
+                // Déterminer la classe CSS selon le pourcentage restant
+                let statusClass = 'api-status-good';
+                if (percentage < 20) {
+                    statusClass = 'api-status-danger';
+                } else if (percentage < 50) {
+                    statusClass = 'api-status-warning';
+                }
+                
+                // Mettre à jour le texte
+                this.elements.apiLimitText.textContent = `API GitHub: ${remaining}/${limit} requêtes restantes`;
+                
+                if (resetTimestamp) {
+                    const resetDate = new Date(resetTimestamp * 1000);
+                    const now = new Date();
+                    const diffMinutes = Math.ceil((resetDate - now) / (1000 * 60));
+                    this.elements.apiResetText.textContent = `Reset dans ${diffMinutes} minutes`;
+                }
+                
+                // Appliquer les styles
+                this.elements.apiStatus.className = `api-status visible ${statusClass}`;
+                
+                // Masquer automatiquement après 10 secondes si tout va bien
+                if (statusClass === 'api-status-good') {
+                    setTimeout(() => {
+                        if (this.elements.apiStatus.classList.contains('api-status-good')) {
+                            this.elements.apiStatus.classList.remove('visible');
+                        }
+                    }, 10000);
+                }
+            }
+
             async loadNames() {
                 this.elements.loadingStatus.textContent = 'Chargement des noms...';
                 this.itemNames = {};
@@ -424,7 +623,7 @@
                 this.placeNames = {};
                 
                 try {
-                    const response = await fetch(`https://raw.githubusercontent.com/Crownicles/Crownicles/${this.currentBranch}/Lang/fr/models.json`);
+                    const response = await this.makeApiRequest(`https://raw.githubusercontent.com/Crownicles/Crownicles/${this.currentBranch}/Lang/fr/models.json`);
                     if (response.ok) {
                         const i18nData = await response.json();
                         this.itemNames = {
@@ -443,30 +642,29 @@
 
             async loadItems() {
                 const itemTypes = ['weapons', 'armors', 'objects', 'potions'];
+                let totalLoaded = 0;
                 
                 for (const type of itemTypes) {
                     this.elements.loadingStatus.textContent = `Chargement des ${type}...`;
                     
                     try {
-                        // Récupérer la liste des fichiers (1 requête par type)
-                        const dirResponse = await fetch(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/${type}?ref=${this.currentBranch}`);
+                        // Récupérer la liste des fichiers
+                        const dirResponse = await this.makeApiRequest(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/${type}?ref=${this.currentBranch}`);
                         if (!dirResponse.ok) continue;
                         
                         const files = await dirResponse.json();
+                        const jsonFiles = files.filter(file => file.name.endsWith('.json'));
                         
-                        // Limiter à 50 items par type pour éviter le spam
-                        const limitedFiles = files.slice(0, 50);
+                        this.elements.loadingStatus.textContent = `Chargement des ${type} (${jsonFiles.length} fichiers)...`;
                         
-                        // Traiter par batch de 10 pour limiter les requêtes simultanées
-                        const batchSize = 10;
-                        for (let i = 0; i < limitedFiles.length; i += batchSize) {
-                            const batch = limitedFiles.slice(i, i + batchSize);
+                        // Traiter par batch de 15 pour éviter de surcharger l'API
+                        const batchSize = 15;
+                        for (let i = 0; i < jsonFiles.length; i += batchSize) {
+                            const batch = jsonFiles.slice(i, i + batchSize);
                             
                             const batchPromises = batch.map(async (file) => {
-                                if (!file.name.endsWith('.json')) return null;
-                                
                                 try {
-                                    const itemResponse = await fetch(file.download_url);
+                                    const itemResponse = await this.makeApiRequest(file.download_url);
                                     if (!itemResponse.ok) return null;
                                     
                                     const item = await itemResponse.json();
@@ -490,12 +688,16 @@
                             });
                             
                             const batchResults = await Promise.all(batchPromises);
-                            batchResults.filter(item => item !== null).forEach(item => {
+                            const validResults = batchResults.filter(item => item !== null);
+                            validResults.forEach(item => {
                                 this.allData.push(item);
                             });
                             
-                            // Petit délai pour éviter de surcharger l'API
-                            await new Promise(resolve => setTimeout(resolve, 100));
+                            totalLoaded += validResults.length;
+                            this.elements.loadingStatus.textContent = `Chargement des ${type} (${totalLoaded}/${jsonFiles.length})...`;
+                            
+                            // Délai pour éviter de surcharger l'API
+                            await new Promise(resolve => setTimeout(resolve, 200));
                         }
                     } catch (error) {
                         console.warn(`Erreur pour le type ${type}:`, error);
@@ -507,25 +709,24 @@
                 this.elements.loadingStatus.textContent = 'Chargement des familiers...';
                 
                 try {
-                    // Récupérer la liste des fichiers (1 requête)
-                    const dirResponse = await fetch(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/pets?ref=${this.currentBranch}`);
+                    // Récupérer la liste des fichiers
+                    const dirResponse = await this.makeApiRequest(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/pets?ref=${this.currentBranch}`);
                     if (!dirResponse.ok) return;
                     
                     const files = await dirResponse.json();
+                    const jsonFiles = files.filter(file => file.name.endsWith('.json'));
                     
-                    // Limiter à 50 familiers pour éviter le spam
-                    const limitedFiles = files.slice(0, 50);
+                    this.elements.loadingStatus.textContent = `Chargement des familiers (${jsonFiles.length} fichiers)...`;
+                    let totalLoaded = 0;
                     
-                    // Traiter par batch de 10
-                    const batchSize = 10;
-                    for (let i = 0; i < limitedFiles.length; i += batchSize) {
-                        const batch = limitedFiles.slice(i, i + batchSize);
+                    // Traiter par batch de 15
+                    const batchSize = 15;
+                    for (let i = 0; i < jsonFiles.length; i += batchSize) {
+                        const batch = jsonFiles.slice(i, i + batchSize);
                         
                         const batchPromises = batch.map(async (file) => {
-                            if (!file.name.endsWith('.json')) return null;
-                            
                             try {
-                                const petResponse = await fetch(file.download_url);
+                                const petResponse = await this.makeApiRequest(file.download_url);
                                 if (!petResponse.ok) return null;
                                 
                                 const pet = await petResponse.json();
@@ -549,12 +750,16 @@
                         });
                         
                         const batchResults = await Promise.all(batchPromises);
-                        batchResults.filter(item => item !== null).forEach(item => {
+                        const validResults = batchResults.filter(item => item !== null);
+                        validResults.forEach(item => {
                             this.allData.push(item);
                         });
                         
-                        // Petit délai pour éviter de surcharger l'API
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        totalLoaded += validResults.length;
+                        this.elements.loadingStatus.textContent = `Chargement des familiers (${totalLoaded}/${jsonFiles.length})...`;
+                        
+                        // Délai pour éviter de surcharger l'API
+                        await new Promise(resolve => setTimeout(resolve, 200));
                     }
                 } catch (error) {
                     console.warn('Erreur lors du chargement des familiers:', error);
@@ -565,25 +770,24 @@
                 this.elements.loadingStatus.textContent = 'Chargement des lieux...';
                 
                 try {
-                    // Récupérer la liste des fichiers (1 requête)
-                    const dirResponse = await fetch(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/maplocations?ref=${this.currentBranch}`);
+                    // Récupérer la liste des fichiers
+                    const dirResponse = await this.makeApiRequest(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/mapLocations?ref=${this.currentBranch}`);
                     if (!dirResponse.ok) return;
                     
                     const files = await dirResponse.json();
+                    const jsonFiles = files.filter(file => file.name.endsWith('.json'));
                     
-                    // Limiter à 30 lieux pour éviter le spam
-                    const limitedFiles = files.slice(0, 30);
+                    this.elements.loadingStatus.textContent = `Chargement des lieux (${jsonFiles.length} fichiers)...`;
+                    let totalLoaded = 0;
                     
-                    // Traiter par batch de 10
-                    const batchSize = 10;
-                    for (let i = 0; i < limitedFiles.length; i += batchSize) {
-                        const batch = limitedFiles.slice(i, i + batchSize);
+                    // Traiter par batch de 15
+                    const batchSize = 15;
+                    for (let i = 0; i < jsonFiles.length; i += batchSize) {
+                        const batch = jsonFiles.slice(i, i + batchSize);
                         
                         const batchPromises = batch.map(async (file) => {
-                            if (!file.name.endsWith('.json')) return null;
-                            
                             try {
-                                const placeResponse = await fetch(file.download_url);
+                                const placeResponse = await this.makeApiRequest(file.download_url);
                                 if (!placeResponse.ok) return null;
                                 
                                 const place = await placeResponse.json();
@@ -607,12 +811,16 @@
                         });
                         
                         const batchResults = await Promise.all(batchPromises);
-                        batchResults.filter(item => item !== null).forEach(item => {
+                        const validResults = batchResults.filter(item => item !== null);
+                        validResults.forEach(item => {
                             this.allData.push(item);
                         });
                         
-                        // Petit délai pour éviter de surcharger l'API
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        totalLoaded += validResults.length;
+                        this.elements.loadingStatus.textContent = `Chargement des lieux (${totalLoaded}/${jsonFiles.length})...`;
+                        
+                        // Délai pour éviter de surcharger l'API
+                        await new Promise(resolve => setTimeout(resolve, 200));
                     }
                 } catch (error) {
                     console.warn('Erreur lors du chargement des lieux:', error);
