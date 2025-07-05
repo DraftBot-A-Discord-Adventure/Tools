@@ -655,75 +655,213 @@
                 
                 const iconsData = await response.text();
                 
-                // Try to extract specific arrays we need using more targeted regex
-                try {
-                    // Extract rarity array
-                    const rarityMatch = iconsData.match(/rarity:\s*\[([\s\S]*?)\]/);
-                    if (rarityMatch) {
-                        const rarityStr = `[${rarityMatch[1]}]`.replace(/,(\s*\])/g, '$1');
-                        crowniclesIcons.rarity = JSON.parse(rarityStr);
-                    }
+                // Set default icons as fallback
+                const defaultIcons = {
+                    rarity: ["🔸", "🔶", "🔥", "🔱", "☄️", "💫", "⭐", "🌟", "💎"],
+                    itemNatures: ["❌", "❤️", "🚀", "⚔️", "🛡️", "🕥", "💰", "⚡"],
+                    itemCategories: ["⚔️", "🛡️", "⚗️", "🧸"],
+                    weapons: {},
+                    armors: {},
+                    objects: {},
+                    potions: {}
+                };
+                
+                // Initialize with default values
+                Object.assign(crowniclesIcons, defaultIcons);
+                
+                // Extract arrays using improved regex patterns
+                // For arrays - handle both string arrays and object arrays differently
+                function extractArray(text, arrayName) {
+                    const regex = new RegExp(`${arrayName}\\s*:\\s*\\[(.*?)\\]`, 's');
+                    const match = text.match(regex);
                     
-                    // Extract itemNatures array
-                    const naturesMatch = iconsData.match(/itemNatures:\s*\[([\s\S]*?)\]/);
-                    if (naturesMatch) {
-                        const naturesStr = `[${naturesMatch[1]}]`.replace(/,(\s*\])/g, '$1');
-                        crowniclesIcons.itemNatures = JSON.parse(naturesStr);
-                    }
+                    if (!match || !match[1]) return [];
                     
-                    // Extract itemCategories array
-                    const categoriesMatch = iconsData.match(/itemCategories:\s*\[([\s\S]*?)\]/);
-                    if (categoriesMatch) {
-                        const categoriesStr = `[${categoriesMatch[1]}]`.replace(/,(\s*\])/g, '$1');
-                        crowniclesIcons.itemCategories = JSON.parse(categoriesStr);
-                    }
-                    
-                    // Extract item-specific icons objects
-                    const extractItemIcons = (itemType) => {
-                        const regex = new RegExp(`${itemType}:\\s*\\{([\\s\\S]*?)\\}(?=,\\s*\\w+:|\\s*\\}\\s*$)`, 'm');
-                        const match = iconsData.match(regex);
-                        if (match) {
-                            try {
-                                // Clean up the object string
-                                let objStr = `{${match[1]}}`;
-                                // Quote unquoted keys
-                                objStr = objStr.replace(/(\w+):/g, '"$1":');
-                                // Remove trailing commas
-                                objStr = objStr.replace(/,(\s*})/g, '$1');
-                                return JSON.parse(objStr);
-                            } catch (e) {
-                                console.warn(`Failed to parse ${itemType} icons:`, e);
-                                return {};
+                    // Check if it's a simple string array (with quotes)
+                    if (match[1].includes('"') || match[1].includes("'")) {
+                        // Split by commas, but not those inside quotes
+                        const items = [];
+                        let currentItem = '';
+                        let inQuote = false;
+                        let quoteChar = '';
+                        
+                        for (let i = 0; i < match[1].length; i++) {
+                            const char = match[1][i];
+                            
+                            if ((char === '"' || char === "'") && (i === 0 || match[1][i-1] !== '\\')) {
+                                if (!inQuote) {
+                                    inQuote = true;
+                                    quoteChar = char;
+                                } else if (char === quoteChar) {
+                                    inQuote = false;
+                                }
+                            }
+                            
+                            if (char === ',' && !inQuote) {
+                                items.push(currentItem.trim());
+                                currentItem = '';
+                            } else {
+                                currentItem += char;
                             }
                         }
-                        return {};
-                    };
-                    
-                    crowniclesIcons.weapons = extractItemIcons('weapons');
-                    crowniclesIcons.armors = extractItemIcons('armors');
-                    crowniclesIcons.objects = extractItemIcons('objects');
-                    crowniclesIcons.potions = extractItemIcons('potions');
-                    
-                    console.log('Loaded Crownicles icons with targeted parsing:', {
-                        rarity: crowniclesIcons.rarity.length,
-                        itemNatures: crowniclesIcons.itemNatures.length,
-                        itemCategories: crowniclesIcons.itemCategories.length,
-                        weapons: Object.keys(crowniclesIcons.weapons).length,
-                        armors: Object.keys(crowniclesIcons.armors).length,
-                        objects: Object.keys(crowniclesIcons.objects).length,
-                        potions: Object.keys(crowniclesIcons.potions).length
-                    });
-                    
-                    // If we got at least the basic arrays, consider it successful
-                    if (crowniclesIcons.rarity.length > 0 && crowniclesIcons.itemNatures.length > 0) {
-                        return; // Success!
+                        
+                        if (currentItem.trim()) {
+                            items.push(currentItem.trim());
+                        }
+                        
+                        // Clean up quotes and trim spaces
+                        return items.map(item => {
+                            item = item.trim();
+                            if ((item.startsWith('"') && item.endsWith('"')) || 
+                                (item.startsWith("'") && item.endsWith("'"))) {
+                                return item.substring(1, item.length - 1);
+                            }
+                            return item;
+                        });
                     }
-                } catch (parseError) {
-                    console.warn('Targeted parsing failed, using fallback:', parseError);
+                    
+                    return [];
                 }
                 
-                // If targeted parsing failed, use fallback
-                setFallbackIcons();
+                // Extract object properties
+                function extractObjectEntries(text, objectName) {
+                    const result = {};
+                    
+                    // First, locate the object in the text
+                    const objectRegex = new RegExp(`${objectName}\\s*:\\s*\\{([\\s\\S]*?)\\}\\s*,\\s*\\w+:`, 'm');
+                    const objectMatch = text.match(objectRegex);
+                    
+                    if (!objectMatch || !objectMatch[1]) return result;
+                    
+                    // Find all key-value pairs using regex
+                    const keyValuePattern = /(\w+)\s*:\s*(['"])(.*?)\2(?:,|\s*$)/g;
+                    const keyValueText = objectMatch[1];
+                    let match;
+                    
+                    while ((match = keyValuePattern.exec(keyValueText)) !== null) {
+                        const [, key, , value] = match;
+                        result[key] = value;
+                    }
+                    
+                    return result;
+                }
+                
+                // Try to extract arrays first
+                try {
+                    const rarityArray = extractArray(iconsData, 'rarity');
+                    if (rarityArray.length > 0) {
+                        crowniclesIcons.rarity = rarityArray;
+                    }
+                    
+                    const itemNaturesArray = extractArray(iconsData, 'itemNatures');
+                    if (itemNaturesArray.length > 0) {
+                        crowniclesIcons.itemNatures = itemNaturesArray;
+                    }
+                    
+                    const itemCategoriesArray = extractArray(iconsData, 'itemCategories');
+                    if (itemCategoriesArray.length > 0) {
+                        crowniclesIcons.itemCategories = itemCategoriesArray;
+                    }
+                } catch (e) {
+                    console.warn('Error extracting arrays:', e);
+                }
+                
+                // Then try to extract objects
+                try {
+                    const weaponsObj = extractObjectEntries(iconsData, 'weapons');
+                    if (Object.keys(weaponsObj).length > 0) {
+                        crowniclesIcons.weapons = weaponsObj;
+                    }
+                    
+                    const armorsObj = extractObjectEntries(iconsData, 'armors');
+                    if (Object.keys(armorsObj).length > 0) {
+                        crowniclesIcons.armors = armorsObj;
+                    }
+                    
+                    const objectsObj = extractObjectEntries(iconsData, 'objects');
+                    if (Object.keys(objectsObj).length > 0) {
+                        crowniclesIcons.objects = objectsObj;
+                    }
+                    
+                    const potionsObj = extractObjectEntries(iconsData, 'potions');
+                    if (Object.keys(potionsObj).length > 0) {
+                        crowniclesIcons.potions = potionsObj;
+                    }
+                } catch (e) {
+                    console.warn('Error extracting objects:', e);
+                }
+                
+                // Direct extraction approach for specific sections
+                function extractSpecificSection(text, sectionName) {
+                    const regex = new RegExp(`${sectionName}\\s*:\\s*\\{([\\s\\S]*?)\\}(?=,\\s*\\w+:|\\s*\\}\\s*$)`, 'm');
+                    const match = text.match(regex);
+                    
+                    if (!match || !match[1]) return {};
+                    
+                    const result = {};
+                    const lines = match[1].split('\n');
+                    
+                    for (const line of lines) {
+                        const keyValueMatch = line.match(/\s*(\w+)\s*:\s*(?:["'])(.*?)(?:["'])\s*,?/);
+                        if (keyValueMatch) {
+                            const [, key, value] = keyValueMatch;
+                            result[key] = value;
+                        }
+                    }
+                    
+                    return result;
+                }
+                
+                // Try direct extraction for specific sections that might have failed
+                if (Object.keys(crowniclesIcons.weapons).length === 0) {
+                    crowniclesIcons.weapons = extractSpecificSection(iconsData, 'weapons');
+                }
+                
+                if (Object.keys(crowniclesIcons.armors).length === 0) {
+                    crowniclesIcons.armors = extractSpecificSection(iconsData, 'armors');
+                }
+                
+                if (Object.keys(crowniclesIcons.objects).length === 0) {
+                    crowniclesIcons.objects = extractSpecificSection(iconsData, 'objects');
+                }
+                
+                if (Object.keys(crowniclesIcons.potions).length === 0) {
+                    crowniclesIcons.potions = extractSpecificSection(iconsData, 'potions');
+                }
+                
+                // Last attempt - try to extract just the effects section which has a simpler structure
+                try {
+                    const effectsMatch = iconsData.match(/effects:\s*\{([^}]*)\}/);
+                    if (effectsMatch && effectsMatch[1]) {
+                        const effectsText = effectsMatch[1];
+                        const effectsLines = effectsText.split('\n');
+                        
+                        const effectsObj = {};
+                        for (const line of effectsLines) {
+                            const effectMatch = line.match(/\s*(\w+):\s*["'](.*?)["'],?/);
+                            if (effectMatch) {
+                                effectsObj[effectMatch[1]] = effectMatch[2];
+                            }
+                        }
+                        
+                        if (Object.keys(effectsObj).length > 0) {
+                            crowniclesIcons.effects = effectsObj;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error extracting effects:', e);
+                }
+                
+                console.log('Loaded Crownicles icons with improved parsing:', {
+                    rarity: crowniclesIcons.rarity.length,
+                    itemNatures: crowniclesIcons.itemNatures.length,
+                    itemCategories: crowniclesIcons.itemCategories.length,
+                    weapons: Object.keys(crowniclesIcons.weapons).length,
+                    armors: Object.keys(crowniclesIcons.armors).length,
+                    objects: Object.keys(crowniclesIcons.objects).length,
+                    potions: Object.keys(crowniclesIcons.potions).length,
+                    effects: crowniclesIcons.effects ? Object.keys(crowniclesIcons.effects).length : 0
+                });
                 
             } catch (error) {
                 console.warn('Failed to load Crownicles icons:', error);
@@ -731,20 +869,41 @@
             }
         }
         
-        // Fallback icons if loading fails
+        // Improved fallback function with more emoji options
         function setFallbackIcons() {
             crowniclesIcons = {
                 rarity: ["🔸", "🔶", "🔥", "🔱", "☄️", "💫", "⭐", "🌟", "💎"],
                 itemNatures: ["❌", "❤️", "🚀", "⚔️", "🛡️", "🕥", "💰", "⚡"],
                 itemCategories: ["⚔️", "🛡️", "⚗️", "🧸"],
-                weapons: {},
-                armors: {},
-                objects: {},
-                potions: {}
+                weapons: {
+                    // Default weapons
+                    "1": "🗡️", "2": "🔪", "3": "⚔️", "4": "🏹", "5": "🪓",
+                    "10": "🔨", "15": "🗡️", "20": "⚔️", "30": "🏹", "40": "🪓"
+                },
+                armors: {
+                    // Default armors
+                    "1": "🛡️", "2": "🪖", "3": "👕", "4": "👑", "5": "🧥",
+                    "10": "🛡️", "15": "🪖", "20": "👕", "30": "👑", "40": "🧥"
+                },
+                objects: {
+                    // Default objects
+                    "1": "📦", "2": "🧰", "3": "💼", "4": "🎒", "5": "🧳",
+                    "10": "📦", "15": "🧰", "20": "💼", "30": "🎒", "40": "🧳"
+                },
+                potions: {
+                    // Default potions
+                    "1": "⚗️", "2": "🧪", "3": "🧫", "4": "💉", "5": "💊",
+                    "10": "⚗️", "15": "🧪", "20": "🧫", "30": "💉", "40": "💊"
+                },
+                effects: {
+                    notStarted: "👶", dead: "💀", none: "😃", sleeping: "😴",
+                    drunk: "🤪", freezing: "🥶", feetHurt: "🦶", hurt: "🤕",
+                    sick: "🤢", jailed: "🔒", injured: "😵"
+                }
             };
         }
-        
-        // Get emoji for an item based on its type and ID
+
+        // Enhanced getItemEmoji function with better fallback
         function getItemEmoji(item) {
             const typeMap = {
                 'weapon': 'weapons',
@@ -754,15 +913,32 @@
             };
             
             const iconType = typeMap[item.type];
+            
+            // Try to get specific icon first
             if (iconType && crowniclesIcons[iconType] && crowniclesIcons[iconType][item.id]) {
                 return crowniclesIcons[iconType][item.id];
             }
             
-            // Fallback to category emoji
+            // If no specific icon, try fallbacks based on rarity and type
+            if (item.rarity >= 0 && item.rarity <= 8) {
+                const rarityBasedEmojis = {
+                    'weapon': ['🗡️', '🔪', '⚔️', '🏹', '🪓', '🔨', '⚒️', '🪚', '⛏️'],
+                    'armor': ['🛡️', '🪖', '👕', '👑', '🧥', '👖', '🧤', '👢', '🦺'],
+                    'object': ['📦', '🧰', '💼', '🎒', '🧳', '📝', '📔', '📚', '💎'],
+                    'potion': ['⚗️', '🧪', '🧫', '💉', '💊', '🧴', '🧬', '🍶', '🍾']
+                };
+                
+                // Get emoji based on item type and rarity
+                if (rarityBasedEmojis[item.type]) {
+                    return rarityBasedEmojis[item.type][item.rarity];
+                }
+            }
+            
+            // Last fallback to category emoji
             return getCategoryEmoji(item.type);
         }
-        
-        // Get category emoji for item type
+
+        // Improved category emoji getter
         function getCategoryEmoji(type) {
             const categoryMap = {
                 'weapon': 0,   // ⚔️
@@ -772,7 +948,15 @@
             };
             
             const categoryIndex = categoryMap[type];
-            return crowniclesIcons.itemCategories[categoryIndex] || '';
+            
+            // If we have category emojis loaded, use them
+            if (crowniclesIcons.itemCategories && crowniclesIcons.itemCategories.length > categoryIndex) {
+                return crowniclesIcons.itemCategories[categoryIndex];
+            }
+            
+            // Otherwise use hardcoded fallbacks
+            const fallbackCategoryEmojis = ["⚔️", "🛡️", "⚗️", "🧸"];
+            return fallbackCategoryEmojis[categoryIndex] || '📦';
         }
         
         // Load item names from i18n file
