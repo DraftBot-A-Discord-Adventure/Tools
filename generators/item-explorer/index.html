@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crownicles Item Explorer</title>
-    <link rel="stylesheet" href="css/item-explorer.css">
+    <link rel="stylesheet" href="item-explorer.css">
 </head>
 <body>
     <div class="container">
@@ -133,8 +133,18 @@
         </div>
     </div>
 
-    <!-- Scripts modulaires -->
-    <script type="module" src="js/item-explorer/app.js"></script>
+    <!-- Scripts classiques (pas de modules) -->
+    <script src="js/config/constants.js"></script>
+    <script src="js/utils/DOMElements.js"></script>
+    <script src="js/utils/ItemCalculator.js"></script>
+    <script src="js/services/IconService.js"></script>
+    <script src="js/services/ItemLoader.js"></script>
+    <script src="js/services/DataManager.js"></script>
+    <script src="js/components/FilterManager.js"></script>
+    <script src="js/components/StatsManager.js"></script>
+    <script src="js/components/TableRenderer.js"></script>
+    <script src="js/controllers/AppController.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
 

@@ -7,7 +7,7 @@ Ce repo présente différents outils pour travailler sur Crownicles
 - [Monstres](https://crownicles.github.io/Tools/generators/monsters.html) - Permet de générer les JSONs pour les monstres
 - [Events](https://crownicles.github.io/Tools/generators/events.html)  - Permet de générer les JSONs pour les évents
 - [Items json to csv](https://crownicles.github.io/Tools/generators/itemCSVGenerator.html) - convertit les JSONs d'objets en CSV pour une utilisation dans Excel
-- [Comparateur d'Objets](https://crownicles.github.io/Tools/generators/item_explorer.html) - Interface de comparaison d'objets avec filtrage, recherche, sélection multiple et comparaison côte à côte des caractéristiques.
+- [Explorateur d'Objets](https://crownicles.github.io/Tools/generators/item-explorer/) - Interface de comparaison d'objets avec filtrage, recherche et analyse statistique avancée.
 - [Classes](https://crownicles.github.io/Tools/generators/classBalancing.html) - Permet de visualiser des équilibrages de changement de stats de classes
 
 ## Autres liens
