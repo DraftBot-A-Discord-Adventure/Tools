@@ -409,11 +409,11 @@
         <div class="stats-display">
             <div class="stat-card">
                 <h3>Items Loaded</h3>
-                <p>Weapons: <span id="weapons-count">0</span></p>
-                <p>Armors: <span id="armors-count">0</span></p>
-                <p>Objects: <span id="objects-count">0</span></p>
-                <p>Potions: <span id="potions-count">0</span></p>
-                <p>Total: <span id="total-count">0</span></p>
+                <p>⚔️ Weapons: <span id="weapons-count">0</span></p>
+                <p>🛡️ Armors: <span id="armors-count">0</span></p>
+                <p>🧸 Objects: <span id="objects-count">0</span></p>
+                <p>⚗️ Potions: <span id="potions-count">0</span></p>
+                <p><strong>📊 Total: <span id="total-count">0</span></strong></p>
             </div>
             
             <div class="stat-card">
@@ -1371,11 +1371,12 @@
                 });
             });
             
-            // Display rarity distribution
+            // Display rarity distribution with emojis
             rarityStats.innerHTML = '';
             RARITY_NAMES.forEach((name, index) => {
+                const rarityEmoji = crowniclesIcons.rarity[index] || '';
                 const percentage = Math.round((rarityDistribution[index] / parseInt(totalCount.textContent)) * 100) || 0;
-                rarityStats.innerHTML += `<p class="rarity-${index}">${name} (${index}): ${rarityDistribution[index]} (${percentage}%)</p>`;
+                rarityStats.innerHTML += `<p class="rarity-${index}">${rarityEmoji} ${name} (${index}): ${rarityDistribution[index]} (${percentage}%)</p>`;
             });
         }
     </script>
