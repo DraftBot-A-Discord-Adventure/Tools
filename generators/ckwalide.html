@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ckwalidé - Recherche d'IDs Crownicles</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        select, input, button {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .search-container {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px 25px;
+            font-size: 18px;
+            border: 3px solid #dee2e6;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+            background: #e9ecef;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .table-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        tr:hover {
+            background: #e3f2fd;
+            transition: background 0.3s ease;
+        }
+
+        .emoji {
+            font-size: 1.5em;
+            text-align: center;
+        }
+
+        .type-item {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .type-item { background: #e9ecef; color: #495057; }
+        .type-weapons { background: #ffebee; color: #c62828; }
+        .type-armors { background: #e8f5e8; color: #2e7d32; }
+        .type-objects { background: #fff3e0; color: #ef6c00; }
+        .type-potions { background: #f3e5f5; color: #7b1fa2; }
+        .type-pets { background: #e1f5fe; color: #0277bd; }
+        .type-places { background: #fce4ec; color: #ad1457; }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .search-box {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Ckwalidé</h1>
+            <p>Trouvez facilement les IDs des items, familiers et lieux de Crownicles</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <label for="branch-select">Branche :</label>
+                    <select id="branch-select">
+                        <option value="master">master</option>
+                        <option value="development">development</option>
+                    </select>
+                </div>
+                <button id="load-btn">Charger les données</button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="search" class="search-box" placeholder="Recherchez un nom, ID ou type..." disabled>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loader"></div>
+            <p id="loading-status">Chargement des données...</p>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-number" id="items-count">0</div>
+                <div class="stat-label">Items</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="pets-count">0</div>
+                <div class="stat-label">Familiers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="places-count">0</div>
+                <div class="stat-label">Lieux</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="total-count">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="results-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Emoji</th>
+                        <th>Nom</th>
+                        <th>Type</th>
+                        <th>ID</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                </tbody>
+            </table>
+            
+            <div class="no-data" id="no-data">
+                Cliquez sur "Charger les données" pour commencer
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CkwalideApp {
+            constructor() {
+                this.allData = [];
+                this.currentBranch = 'master';
+                this.isLoading = false;
+                
+                this.elements = {
+                    branchSelect: document.getElementById('branch-select'),
+                    loadBtn: document.getElementById('load-btn'),
+                    searchInput: document.getElementById('search'),
+                    loading: document.getElementById('loading'),
+                    loadingStatus: document.getElementById('loading-status'),
+                    stats: document.getElementById('stats'),
+                    table: document.getElementById('results-table'),
+                    tableBody: document.getElementById('results-body'),
+                    noData: document.getElementById('no-data'),
+                    itemsCount: document.getElementById('items-count'),
+                    petsCount: document.getElementById('pets-count'),
+                    placesCount: document.getElementById('places-count'),
+                    totalCount: document.getElementById('total-count')
+                };
+
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                this.elements.loadBtn.addEventListener('click', () => this.loadData());
+                this.elements.searchInput.addEventListener('input', (e) => this.search(e.target.value));
+            }
+
+            async loadData() {
+                if (this.isLoading) return;
+                
+                this.isLoading = true;
+                this.currentBranch = this.elements.branchSelect.value;
+                
+                this.elements.loading.style.display = 'block';
+                this.elements.stats.style.display = 'none';
+                this.elements.table.style.display = 'none';
+                this.elements.noData.style.display = 'none';
+                this.elements.loadBtn.disabled = true;
+                this.elements.searchInput.disabled = true;
+
+                try {
+                    this.allData = [];
+                    
+                    // Charger les noms d'abord (une seule requête)
+                    await this.loadNames();
+                    
+                    // Charger tous les types de données en parallèle
+                    await Promise.all([
+                        this.loadItems(),
+                        this.loadPets(),
+                        this.loadPlaces()
+                    ]);
+                    
+                    this.updateStats();
+                    this.elements.searchInput.disabled = false;
+                    this.elements.searchInput.placeholder = "Recherchez un nom, ID ou type...";
+                    this.displayResults(this.allData);
+                    
+                } catch (error) {
+                    console.error('Erreur lors du chargement:', error);
+                    this.showError(`Erreur: ${error.message}`);
+                } finally {
+                    this.elements.loading.style.display = 'none';
+                    this.elements.loadBtn.disabled = false;
+                    this.isLoading = false;
+                }
+            }
+
+            async loadNames() {
+                this.elements.loadingStatus.textContent = 'Chargement des noms...';
+                this.itemNames = {};
+                this.petNames = {};
+                this.placeNames = {};
+                
+                try {
+                    const response = await fetch(`https://raw.githubusercontent.com/Crownicles/Crownicles/${this.currentBranch}/Lang/fr/models.json`);
+                    if (response.ok) {
+                        const i18nData = await response.json();
+                        this.itemNames = {
+                            weapons: i18nData.weapons || {},
+                            armors: i18nData.armors || {},
+                            objects: i18nData.objects || {},
+                            potions: i18nData.potions || {}
+                        };
+                        this.petNames = i18nData.pets || {};
+                        this.placeNames = i18nData.map_locations || {};
+                    }
+                } catch (error) {
+                    console.warn('Impossible de charger les noms:', error);
+                }
+            }
+
+            async loadItems() {
+                const itemTypes = ['weapons', 'armors', 'objects', 'potions'];
+                
+                for (const type of itemTypes) {
+                    this.elements.loadingStatus.textContent = `Chargement des ${type}...`;
+                    
+                    try {
+                        // Récupérer la liste des fichiers (1 requête par type)
+                        const dirResponse = await fetch(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/${type}?ref=${this.currentBranch}`);
+                        if (!dirResponse.ok) continue;
+                        
+                        const files = await dirResponse.json();
+                        
+                        // Limiter à 50 items par type pour éviter le spam
+                        const limitedFiles = files.slice(0, 50);
+                        
+                        // Traiter par batch de 10 pour limiter les requêtes simultanées
+                        const batchSize = 10;
+                        for (let i = 0; i < limitedFiles.length; i += batchSize) {
+                            const batch = limitedFiles.slice(i, i + batchSize);
+                            
+                            const batchPromises = batch.map(async (file) => {
+                                if (!file.name.endsWith('.json')) return null;
+                                
+                                try {
+                                    const itemResponse = await fetch(file.download_url);
+                                    if (!itemResponse.ok) return null;
+                                    
+                                    const item = await itemResponse.json();
+                                    const id = parseInt(file.name.split('.')[0]);
+                                    
+                                    const itemName = this.itemNames[type] && this.itemNames[type][id.toString()] 
+                                        ? this.itemNames[type][id.toString()]
+                                        : `${type.slice(0, -1)} ${id}`;
+                                    
+                                    return {
+                                        id: id,
+                                        name: itemName,
+                                        type: type.slice(0, -1),
+                                        category: 'item',
+                                        emoji: this.getItemEmoji(type.slice(0, -1), id)
+                                    };
+                                } catch (error) {
+                                    console.warn(`Erreur pour ${file.name}:`, error);
+                                    return null;
+                                }
+                            });
+                            
+                            const batchResults = await Promise.all(batchPromises);
+                            batchResults.filter(item => item !== null).forEach(item => {
+                                this.allData.push(item);
+                            });
+                            
+                            // Petit délai pour éviter de surcharger l'API
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                    } catch (error) {
+                        console.warn(`Erreur pour le type ${type}:`, error);
+                    }
+                }
+            }
+
+            async loadPets() {
+                this.elements.loadingStatus.textContent = 'Chargement des familiers...';
+                
+                try {
+                    // Récupérer la liste des fichiers (1 requête)
+                    const dirResponse = await fetch(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/pets?ref=${this.currentBranch}`);
+                    if (!dirResponse.ok) return;
+                    
+                    const files = await dirResponse.json();
+                    
+                    // Limiter à 50 familiers pour éviter le spam
+                    const limitedFiles = files.slice(0, 50);
+                    
+                    // Traiter par batch de 10
+                    const batchSize = 10;
+                    for (let i = 0; i < limitedFiles.length; i += batchSize) {
+                        const batch = limitedFiles.slice(i, i + batchSize);
+                        
+                        const batchPromises = batch.map(async (file) => {
+                            if (!file.name.endsWith('.json')) return null;
+                            
+                            try {
+                                const petResponse = await fetch(file.download_url);
+                                if (!petResponse.ok) return null;
+                                
+                                const pet = await petResponse.json();
+                                const id = parseInt(file.name.split('.')[0]);
+                                
+                                const petName = this.petNames[id.toString()] && this.petNames[id.toString()].male
+                                    ? this.petNames[id.toString()].male
+                                    : `Familier ${id}`;
+                                
+                                return {
+                                    id: id,
+                                    name: petName,
+                                    type: 'pet',
+                                    category: 'pet',
+                                    emoji: pet.emoteMale || '🐾'
+                                };
+                            } catch (error) {
+                                console.warn(`Erreur pour ${file.name}:`, error);
+                                return null;
+                            }
+                        });
+                        
+                        const batchResults = await Promise.all(batchPromises);
+                        batchResults.filter(item => item !== null).forEach(item => {
+                            this.allData.push(item);
+                        });
+                        
+                        // Petit délai pour éviter de surcharger l'API
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                } catch (error) {
+                    console.warn('Erreur lors du chargement des familiers:', error);
+                }
+            }
+
+            async loadPlaces() {
+                this.elements.loadingStatus.textContent = 'Chargement des lieux...';
+                
+                try {
+                    // Récupérer la liste des fichiers (1 requête)
+                    const dirResponse = await fetch(`https://api.github.com/repos/Crownicles/Crownicles/contents/Core/resources/maplocations?ref=${this.currentBranch}`);
+                    if (!dirResponse.ok) return;
+                    
+                    const files = await dirResponse.json();
+                    
+                    // Limiter à 30 lieux pour éviter le spam
+                    const limitedFiles = files.slice(0, 30);
+                    
+                    // Traiter par batch de 10
+                    const batchSize = 10;
+                    for (let i = 0; i < limitedFiles.length; i += batchSize) {
+                        const batch = limitedFiles.slice(i, i + batchSize);
+                        
+                        const batchPromises = batch.map(async (file) => {
+                            if (!file.name.endsWith('.json')) return null;
+                            
+                            try {
+                                const placeResponse = await fetch(file.download_url);
+                                if (!placeResponse.ok) return null;
+                                
+                                const place = await placeResponse.json();
+                                const id = parseInt(file.name.split('.')[0]);
+                                
+                                const placeName = this.placeNames[id.toString()] && this.placeNames[id.toString()].name
+                                    ? this.placeNames[id.toString()].name
+                                    : `Lieu ${id}`;
+                                
+                                return {
+                                    id: id,
+                                    name: placeName,
+                                    type: 'place',
+                                    category: 'place',
+                                    emoji: '🗺️'
+                                };
+                            } catch (error) {
+                                console.warn(`Erreur pour ${file.name}:`, error);
+                                return null;
+                            }
+                        });
+                        
+                        const batchResults = await Promise.all(batchPromises);
+                        batchResults.filter(item => item !== null).forEach(item => {
+                            this.allData.push(item);
+                        });
+                        
+                        // Petit délai pour éviter de surcharger l'API
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                } catch (error) {
+                    console.warn('Erreur lors du chargement des lieux:', error);
+                }
+            }
+
+            getItemEmoji(type, id) {
+                const emojis = {
+                    weapon: '⚔️',
+                    armor: '🛡️',
+                    object: '🧸',
+                    potion: '⚗️'
+                };
+                return emojis[type] || '📦';
+            }
+
+            updateStats() {
+                const itemsCount = this.allData.filter(item => item.category === 'item').length;
+                const petsCount = this.allData.filter(item => item.category === 'pet').length;
+                const placesCount = this.allData.filter(item => item.category === 'place').length;
+                const totalCount = this.allData.length;
+
+                this.elements.itemsCount.textContent = itemsCount;
+                this.elements.petsCount.textContent = petsCount;
+                this.elements.placesCount.textContent = placesCount;
+                this.elements.totalCount.textContent = totalCount;
+                
+                this.elements.stats.style.display = 'flex';
+            }
+
+            search(query) {
+                if (!query.trim()) {
+                    this.displayResults(this.allData);
+                    return;
+                }
+
+                const searchTerm = query.toLowerCase();
+                const filtered = this.allData.filter(item => 
+                    item.name.toLowerCase().includes(searchTerm) ||
+                    item.id.toString().includes(searchTerm) ||
+                    item.type.toLowerCase().includes(searchTerm)
+                );
+
+                this.displayResults(filtered);
+            }
+
+            displayResults(data) {
+                this.elements.tableBody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    this.elements.table.style.display = 'none';
+                    this.elements.noData.style.display = 'block';
+                    this.elements.noData.textContent = 'Aucun résultat trouvé';
+                    return;
+                }
+
+                this.elements.table.style.display = 'table';
+                this.elements.noData.style.display = 'none';
+
+                // Trier par ID
+                data.sort((a, b) => a.id - b.id);
+
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="emoji">${item.emoji}</td>
+                        <td>${item.name}</td>
+                        <td><span class="type-item type-${item.type}">${item.type}</span></td>
+                        <td><strong>${item.id}</strong></td>
+                    `;
+                    this.elements.tableBody.appendChild(row);
+                });
+            }
+
+            showError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.textContent = message;
+                
+                const container = document.querySelector('.container');
+                container.appendChild(errorDiv);
+                
+                setTimeout(() => errorDiv.remove(), 5000);
+            }
+        }
+
+        // Initialiser l'application
+        document.addEventListener('DOMContentLoaded', () => {
+            new CkwalideApp();
+        });
+    </script>
+</body>
+</html>
