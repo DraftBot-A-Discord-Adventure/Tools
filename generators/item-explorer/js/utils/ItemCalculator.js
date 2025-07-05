@@ -23,14 +23,15 @@ class ItemCalculator {
         item.rawAttack = item.rawAttack || 0;
         item.rawDefense = 0;
         
-        if (item.rawAttack > 0) {
-            const calculatedAttack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                              Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
-            const bonusAttack = item.attack || 0;
-            item.attack = calculatedAttack + bonusAttack;
-        } else {
-            item.attack = item.attack || 0;
-        }
+        // Sauvegarder la valeur d'attaque originale AVANT qu'elle soit modifiée
+        const originalAttack = item.attack || 0;
+        
+        // Toujours calculer l'attaque avec la formule, même si rawAttack est 0
+        const calculatedAttack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                          Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
+        
+        // Utiliser la valeur calculée + bonus originaux
+        item.attack = calculatedAttack + originalAttack;
         
         item.defense = item.defense || 0;
         item.speed = item.speed || 0;
@@ -44,14 +45,15 @@ class ItemCalculator {
         
         item.attack = item.attack || 0;
         
-        if (item.rawDefense > 0) {
-            const calculatedDefense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
-                                               Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
-            const bonusDefense = item.defense || 0;
-            item.defense = calculatedDefense + bonusDefense;
-        } else {
-            item.defense = item.defense || 0;
-        }
+        // Sauvegarder la valeur de défense originale AVANT qu'elle soit modifiée
+        const originalDefense = item.defense || 0;
+        
+        // Toujours calculer la défense avec la formule, même si rawDefense est 0
+        const calculatedDefense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                                           Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
+        
+        // Utiliser la valeur calculée + bonus originaux
+        item.defense = calculatedDefense + originalDefense;
         
         item.speed = item.speed || 0;
     }
