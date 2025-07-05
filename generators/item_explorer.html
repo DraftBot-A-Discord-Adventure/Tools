@@ -250,6 +250,21 @@
             border-radius: 3px;
             margin-bottom: 5px;
         }
+        
+        /* Column visibility */
+        .column-hidden {
+            display: none !important;
+        }
+        
+        /* Column headers with data attributes for better control */
+        th[data-column="rawAttack"] { }
+        th[data-column="rawDefense"] { }
+        th[data-column="rawSpeed"] { }
+        th[data-column="finalAttack"] { }
+        th[data-column="finalDefense"] { }
+        th[data-column="finalSpeed"] { }
+        th[data-column="power"] { }
+        th[data-column="nature"] { }
     </style>
 </head>
 <body>
@@ -342,14 +357,14 @@
                         <th data-sort="name">Name</th>
                         <th data-sort="rarity">Rarity</th>
                         <th data-sort="type">Type</th>
-                        <th data-sort="rawAttack">Raw Attack</th>
-                        <th data-sort="rawDefense">Raw Defense</th>
-                        <th data-sort="rawSpeed">Raw Speed</th>
-                        <th data-sort="finalAttack">Final Attack</th>
-                        <th data-sort="finalDefense">Final Defense</th>
-                        <th data-sort="finalSpeed">Final Speed</th>
-                        <th data-sort="nature">Nature</th>
-                        <th data-sort="power">Power</th>
+                        <th data-sort="rawAttack" data-column="rawAttack">Raw Attack</th>
+                        <th data-sort="rawDefense" data-column="rawDefense">Raw Defense</th>
+                        <th data-sort="rawSpeed" data-column="rawSpeed">Raw Speed</th>
+                        <th data-sort="finalAttack" data-column="finalAttack">Final Attack</th>
+                        <th data-sort="finalDefense" data-column="finalDefense">Final Defense</th>
+                        <th data-sort="finalSpeed" data-column="finalSpeed">Final Speed</th>
+                        <th data-sort="nature" data-column="nature">Nature</th>
+                        <th data-sort="power" data-column="power">Power</th>
                         <th data-sort="tags">Tags</th>
                     </tr>
                 </thead>
@@ -430,6 +445,7 @@
                     typeButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     currentType = btn.dataset.type;
+                    updateColumnVisibility();
                     displayItems();
                 });
             });
@@ -457,6 +473,9 @@
             
             // Setup column sorting
             setupSorting();
+            
+            // Initialize column visibility
+            updateColumnVisibility();
         });
         
         // Setup sorting functionality
@@ -797,37 +816,44 @@
         function calculateWeaponStats(item) {
             const multiplier = RARITY_MULTIPLIERS[item.rarity] || 1;
             
-            // Base values
+            // Weapons only have rawAttack
             item.rawAttack = item.rawAttack || 0;
-            item.rawDefense = item.rawDefense || 0;
-            item.rawSpeed = item.rawSpeed || 0;
+            item.rawDefense = 0; // Weapons never have raw defense
+            item.rawSpeed = 0; // Weapons never have raw speed
             
-            // Calculate using the formula from the summary
+            // Calculate final attack using the formula
             if (item.rawAttack) {
                 item.finalAttack = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
                                             Math.pow(1.0569 + 0.1448 / multiplier, item.rawAttack));
             } else {
                 item.finalAttack = 0;
             }
-
+            
+            // Some weapons might have defense and speed bonuses (not raw, but final)
+            item.finalDefense = item.finalDefense || 0;
+            item.finalSpeed = item.finalSpeed || 0;
         }
         
         // Calculate armor stats
         function calculateArmorStats(item) {
             const multiplier = RARITY_MULTIPLIERS[item.rarity] || 1;
             
-            // Base values
+            // Armors only have rawDefense
             item.rawDefense = item.rawDefense || 0;
-            item.rawAttack = item.rawAttack || 0;
-            item.rawSpeed = item.rawSpeed || 0;
+            item.rawAttack = 0; // Armors never have raw attack
+            item.rawSpeed = 0; // Armors never have raw speed
             
-            // Calculate using the formula from the summary
+            // Calculate final defense using the formula
             if (item.rawDefense) {
                 item.finalDefense = Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
                                              Math.pow(1.0569 + 0.1448 / multiplier, item.rawDefense));
             } else {
                 item.finalDefense = 0;
             }
+            
+            // Some armors might have attack and speed bonuses (not raw, but final)
+            item.finalAttack = item.finalAttack || 0;
+            item.finalSpeed = item.finalSpeed || 0;
         }
         
         // Calculate object stats
@@ -909,6 +935,64 @@
             return 0;
         }
         
+        // Update column visibility based on current type
+        function updateColumnVisibility() {
+            const table = itemsTable;
+            const headers = table.querySelectorAll('th[data-column]');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            // Reset all columns to visible first
+            headers.forEach(header => {
+                header.classList.remove('column-hidden');
+            });
+            
+            // Hide/show columns based on type
+            if (currentType === 'weapons') {
+                // Weapons: show rawAttack, hide rawDefense and rawSpeed
+                // Show finalDefense and finalSpeed (sometimes available)
+                table.querySelector('th[data-column="rawDefense"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="rawSpeed"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="power"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="nature"]').classList.add('column-hidden');
+            } else if (currentType === 'armors') {
+                // Armors: show rawDefense, hide rawAttack and rawSpeed
+                // Show finalAttack and finalSpeed (sometimes available)
+                table.querySelector('th[data-column="rawAttack"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="rawSpeed"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="power"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="nature"]').classList.add('column-hidden');
+            } else if (currentType === 'objects' || currentType === 'potions') {
+                // Objects/Potions: hide all raw stats, show power and nature
+                table.querySelector('th[data-column="rawAttack"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="rawDefense"]').classList.add('column-hidden');
+                table.querySelector('th[data-column="rawSpeed"]').classList.add('column-hidden');
+            }
+            // For 'all' type, show everything
+            
+            // Update cell visibility for existing rows
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (currentType === 'weapons') {
+                    if (cells[5]) cells[5].classList.add('column-hidden'); // rawDefense
+                    if (cells[6]) cells[6].classList.add('column-hidden'); // rawSpeed
+                    if (cells[10]) cells[10].classList.add('column-hidden'); // nature
+                    if (cells[11]) cells[11].classList.add('column-hidden'); // power
+                } else if (currentType === 'armors') {
+                    if (cells[4]) cells[4].classList.add('column-hidden'); // rawAttack
+                    if (cells[6]) cells[6].classList.add('column-hidden'); // rawSpeed
+                    if (cells[10]) cells[10].classList.add('column-hidden'); // nature
+                    if (cells[11]) cells[11].classList.add('column-hidden'); // power
+                } else if (currentType === 'objects' || currentType === 'potions') {
+                    if (cells[4]) cells[4].classList.add('column-hidden'); // rawAttack
+                    if (cells[5]) cells[5].classList.add('column-hidden'); // rawDefense
+                    if (cells[6]) cells[6].classList.add('column-hidden'); // rawSpeed
+                } else {
+                    // Show all for 'all' type
+                    cells.forEach(cell => cell.classList.remove('column-hidden'));
+                }
+            });
+        }
+        
         // Display items in the table
         function displayItems() {
             const tbody = itemsTable.querySelector('tbody');
@@ -956,14 +1040,14 @@
                     <td>${item.name || 'N/A'}</td>
                     <td class="rarity-${item.rarity}">${RARITY_NAMES[item.rarity]} (${item.rarity})</td>
                     <td>${item.type.charAt(0).toUpperCase() + item.type.slice(1)}</td>
-                    <td>${item.rawAttack || '0'}</td>
-                    <td>${item.rawDefense || '0'}</td>
-                    <td>${item.rawSpeed || '0'}</td>
+                    <td class="${currentType === 'armors' || currentType === 'objects' || currentType === 'potions' ? 'column-hidden' : ''}">${item.rawAttack || '0'}</td>
+                    <td class="${currentType === 'weapons' || currentType === 'objects' || currentType === 'potions' ? 'column-hidden' : ''}">${item.rawDefense || '0'}</td>
+                    <td class="${currentType === 'weapons' || currentType === 'armors' || currentType === 'objects' || currentType === 'potions' ? 'column-hidden' : ''}">${item.rawSpeed || '0'}</td>
                     <td>${item.finalAttack || '0'}</td>
                     <td>${item.finalDefense || '0'}</td>
                     <td>${item.finalSpeed || '0'}</td>
-                    <td>${NATURE_NAMES[item.nature] || 'N/A'}</td>
-                    <td>${item.power || '0'}</td>
+                    <td class="${currentType === 'weapons' || currentType === 'armors' ? 'column-hidden' : ''}">${NATURE_NAMES[item.nature] || 'N/A'}</td>
+                    <td class="${currentType === 'weapons' || currentType === 'armors' ? 'column-hidden' : ''}">${item.power || '0'}</td>
                     <td>${item.tags ? item.tags.join(', ') : ''}</td>
                 `;
                 
