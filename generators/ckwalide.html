@@ -492,37 +492,14 @@
                 setTimeout(() => infoDiv.remove(), 3000);
             }
 
-            async loadData(forceRefresh = false) {
+            async loadData(forceRefresh = true) {
                 if (this.isLoading) return;
                 
                 this.isLoading = true;
                 this.currentBranch = this.elements.branchSelect.value;
                 
-                // Vérifier le cache si ce n'est pas un refresh forcé
-                if (!forceRefresh) {
-                    const cacheKey = `${this.cachePrefix}${this.currentBranch}`;
-                    const cached = localStorage.getItem(cacheKey);
-                    
-                    if (cached) {
-                        try {
-                            const { data, timestamp } = JSON.parse(cached);
-                            const now = Date.now();
-                            
-                            if (now - timestamp < this.cacheExpiry) {
-                                this.allData = data;
-                                this.updateStats();
-                                this.displayResults(this.allData);
-                                this.elements.searchInput.disabled = false;
-                                this.elements.searchInput.placeholder = "Recherchez un nom, ID ou type...";
-                                this.showCacheInfo();
-                                this.isLoading = false;
-                                return;
-                            }
-                        } catch (error) {
-                            console.warn('Cache corrompu:', error);
-                        }
-                    }
-                }
+                // Le bouton "Charger les données" force toujours un refresh
+                // Le cache n'est utilisé que lors du checkCache() au chargement de la page
                 
                 this.elements.loading.style.display = 'block';
                 this.elements.stats.style.display = 'none';
@@ -544,7 +521,7 @@
                         this.loadPlaces()
                     ]);
                     
-                    // Sauvegarder en cache
+                    // Sauvegarder en cache après chargement frais
                     this.saveToCache();
                     
                     this.updateStats();
