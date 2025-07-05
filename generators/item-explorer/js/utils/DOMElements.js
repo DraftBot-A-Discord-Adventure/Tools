@@ -43,5 +43,9 @@ class DOMElements {
         this.potionsCount = document.getElementById('potions-count');
         this.totalCount = document.getElementById('total-count');
         this.rarityStats = document.getElementById('rarity-stats');
+        
+        // Analysis elements
+        this.statAnalysis = document.getElementById('stat-analysis');
+        this.analysisLegend = document.getElementById('analysis-legend');
     }
 }

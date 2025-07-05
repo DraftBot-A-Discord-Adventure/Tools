@@ -2,11 +2,16 @@
 class TableRenderer {
     constructor(elements, iconService) {
         this.elements = elements;
-        this.iconService = iconService || new IconService(elements); // Utiliser l'instance partagée
+        this.iconService = iconService || new IconService(elements);
         this.filterManager = new FilterManager(elements);
+        this.statAnalysis = null; // Will be injected by AppController
     }
 
-    displayItems(allItems, currentType, filters, sort, useColorCoding = false) {
+    setStatAnalysis(statAnalysis) {
+        this.statAnalysis = statAnalysis;
+    }
+
+    displayItems(allItems, currentType, filters, sort, useColorCoding = false, useStatAnalysis = false) {
         let itemsToDisplay = [];
         
         // Collect items based on type filter
@@ -35,10 +40,21 @@ class TableRenderer {
         if (useColorCoding) {
             colorRanges = this.calculateColorRanges(itemsToDisplay);
         }
+
+        // Calculate performance scores based on visible items
+        let performanceData = null;
+        if (useStatAnalysis && this.statAnalysis) {
+            performanceData = this.statAnalysis.calculatePerformanceScores(itemsToDisplay, currentType);
+        }
+        
+        // Clear previous analysis highlighting
+        if (this.statAnalysis) {
+            this.statAnalysis.clearAnalysisHighlighting();
+        }
         
         // Populate table
         itemsToDisplay.forEach(item => {
-            const row = this.createTableRow(item, currentType, colorRanges);
+            const row = this.createTableRow(item, currentType, colorRanges, performanceData);
             this.elements.tableBody.appendChild(row);
         });
         
@@ -46,7 +62,7 @@ class TableRenderer {
         this.filterManager.updateColumnVisibility(currentType);
     }
 
-    createTableRow(item, currentType, colorRanges) {
+    createTableRow(item, currentType, colorRanges, performanceData) {
         const row = document.createElement('tr');
         
         const emoji = this.iconService.getItemEmoji(item);
@@ -69,20 +85,29 @@ class TableRenderer {
             item.speed || item.finalSpeed || 0,
             `${natureEmoji} ${natureName} (${item.nature || 0})`,
             item.power || 0,
+            null, // Performance cell will be handled separately
             item.tags ? item.tags.join(', ') : ''
         ];
         
         cells.forEach((cellContent, index) => {
-            const cell = document.createElement('td');
-            cell.textContent = cellContent;
+            let cell;
+            
+            // Handle performance column specially
+            if (index === 12) {
+                cell = this.statAnalysis ? this.statAnalysis.createPerformanceCell(item, performanceData) : document.createElement('td');
+                if (!this.statAnalysis) cell.textContent = '-';
+            } else {
+                cell = document.createElement('td');
+                cell.textContent = cellContent;
+            }
             
             // Apply rarity color to rarity column
             if (index === 3) {
                 cell.className = `rarity-${item.rarity}`;
             }
             
-            // Apply color coding if enabled
-            if (colorRanges && this.shouldApplyColorCoding(index, currentType)) {
+            // Apply color coding if enabled (original system) - but not to performance column
+            if (colorRanges && index !== 12 && this.shouldApplyColorCoding(index, currentType)) {
                 const value = typeof cellContent === 'number' ? cellContent : parseFloat(cellContent) || 0;
                 const colorClass = this.getColorClass(value, colorRanges[index]);
                 if (colorClass) {
@@ -94,6 +119,36 @@ class TableRenderer {
         });
         
         return row;
+    }
+
+    shouldApplyStatAnalysis(columnIndex, currentType, item) {
+        // Only apply to weapons and armors, and only to relevant stat columns
+        if (item.type !== 'weapon' && item.type !== 'armor') {
+            return false;
+        }
+
+        if (item.type === 'weapon') {
+            return [5, 7, 8, 9].includes(columnIndex); // rawAttack, attack, defense, speed
+        } else if (item.type === 'armor') {
+            return [6, 7, 8, 9].includes(columnIndex); // rawDefense, attack, defense, speed
+        }
+
+        return false;
+    }
+
+    updateTableHeader() {
+        const headerRow = this.elements.itemsTable.querySelector('thead tr');
+        const firstHeader = headerRow.querySelector('th');
+        
+        // Check if checkbox header already exists
+        if (!headerRow.querySelector('.checkbox-header')) {
+            const checkboxHeader = document.createElement('th');
+            checkboxHeader.className = 'checkbox-header';
+            checkboxHeader.textContent = '☑️';
+            checkboxHeader.style.width = '40px';
+            checkboxHeader.style.textAlign = 'center';
+            headerRow.insertBefore(checkboxHeader, firstHeader);
+        }
     }
 
     calculateColorRanges(items) {

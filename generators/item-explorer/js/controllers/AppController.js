@@ -7,7 +7,11 @@ class AppController {
         this.dataManager = new DataManager(this.elements);
         this.filterManager = new FilterManager(this.elements);
         this.statsManager = new StatsManager(this.elements);
-        this.tableRenderer = new TableRenderer(this.elements, this.iconService); // Passer l'instance partagée
+        this.tableRenderer = new TableRenderer(this.elements, this.iconService);
+        this.statAnalysis = new StatAnalysis(this.elements, this.iconService); // Nouveau composant d'analyse
+        
+        // Inject stat analysis into table renderer
+        this.tableRenderer.setStatAnalysis(this.statAnalysis);
         
         this.allItems = { weapons: [], armors: [], objects: [], potions: [] };
         this.currentBranch = CONSTANTS.DEFAULT_BRANCH;
@@ -84,6 +88,11 @@ class AppController {
             this.updateColorLegendVisibility();
             this.updateDisplay();
         });
+
+        // Stat analysis toggle
+        this.elements.statAnalysis.addEventListener('change', () => {
+            this.updateDisplay();
+        });
         
         // Type buttons
         this.elements.typeButtons.forEach(btn => {
@@ -140,7 +149,8 @@ class AppController {
 
     updateDisplay() {
         const useColorCoding = this.elements.colorCoding.checked;
-        this.tableRenderer.displayItems(this.allItems, this.currentType, this.filters, this.sort, useColorCoding);
+        const useStatAnalysis = this.elements.statAnalysis.checked;
+        this.tableRenderer.displayItems(this.allItems, this.currentType, this.filters, this.sort, useColorCoding, useStatAnalysis);
     }
 
     updateColorLegendVisibility() {

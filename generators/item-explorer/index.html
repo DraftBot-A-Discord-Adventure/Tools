@@ -118,6 +118,15 @@
             <button class="type-btn" data-type="potions">Potions</button>
         </div>
         
+        <!-- Intelligent stat analysis controls -->
+        <div class="analysis-controls" id="analysis-controls">
+            <div class="analysis-toggle">
+                <input type="checkbox" id="stat-analysis" />
+                <label for="stat-analysis">Smart Stat Analysis</label>
+            </div>
+            <div class="analysis-info">Highlights strengths & weaknesses compared to similar items</div>
+        </div>
+        
         <div id="loading">
             <div class="loader"></div>
             <p id="loading-status">Loading items data...</p>
@@ -159,6 +168,7 @@
                         <th data-sort="speed" data-column="speed">Speed</th>
                         <th data-sort="nature" data-column="nature">Nature</th>
                         <th data-sort="power" data-column="power">Power</th>
+                        <th data-sort="performance" data-column="performance">Performance</th>
                         <th data-sort="tags">Tags</th>
                     </tr>
                 </thead>
@@ -166,6 +176,33 @@
                     <!-- Items will be populated here -->
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Analysis legend -->
+    <div class="analysis-legend" id="analysis-legend">
+        <strong>Performance Analysis Legend:</strong>
+        <div class="analysis-legend-grid">
+            <div class="analysis-legend-item">
+                <div class="score-sample performance-score-s">S</div>
+                <span>🏆 Outstanding (Top 10%)</span>
+            </div>
+            <div class="analysis-legend-item">
+                <div class="score-sample performance-score-a">A</div>
+                <span>Excellent (Top 25%)</span>
+            </div>
+            <div class="analysis-legend-item">
+                <div class="score-sample performance-score-b">B</div>
+                <span>Good (Above Average)</span>
+            </div>
+            <div class="analysis-legend-item">
+                <div class="score-sample performance-score-c">C</div>
+                <span>Below Average</span>
+            </div>
+            <div class="analysis-legend-item">
+                <div class="score-sample performance-score-d">D</div>
+                <span>⚠️ Poor (Bottom 25%)</span>
+            </div>
         </div>
     </div>
 
@@ -178,6 +215,7 @@
     <script src="js/services/DataManager.js"></script>
     <script src="js/components/FilterManager.js"></script>
     <script src="js/components/StatsManager.js"></script>
+    <script src="js/components/StatAnalysis.js"></script>
     <script src="js/components/TableRenderer.js"></script>
     <script src="js/controllers/AppController.js"></script>
     <script src="js/app.js"></script>
