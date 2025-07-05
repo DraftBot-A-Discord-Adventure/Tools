@@ -80,18 +80,18 @@ class StatAnalysis {
             // For weapons: attack as base score multiplied by rarity bonus
             const baseScore = attack * rarityBonus;
             
-            // Add or subtract (if negative) defense and speed values squared
-            const defenseModifier = defense >= 0 ? Math.pow(defense, 2) : -Math.pow(Math.abs(defense), 2);
-            const speedModifier = speed >= 0 ? Math.pow(speed, 2) : -Math.pow(Math.abs(speed), 2);
+            // Add or subtract (if negative) defense and speed values to the power of 1.2
+            const defenseModifier = defense >= 0 ? Math.pow(defense, 1.2) : -Math.pow(Math.abs(defense), 1.2);
+            const speedModifier = speed >= 0 ? Math.pow(speed, 1.2) : -Math.pow(Math.abs(speed), 1.2);
             
             powerScore = baseScore + defenseModifier + speedModifier;
         } else if (type === 'armor') {
             // For armors: defense as base score multiplied by rarity bonus
             const baseScore = defense * rarityBonus;
             
-            // Add or subtract (if negative) attack and speed values squared
-            const attackModifier = attack >= 0 ? Math.pow(attack, 2) : -Math.pow(Math.abs(attack), 2);
-            const speedModifier = speed >= 0 ? Math.pow(speed, 2) : -Math.pow(Math.abs(speed), 2);
+            // Add or subtract (if negative) attack and speed values to the power of 1.2
+            const attackModifier = attack >= 0 ? Math.pow(attack, 1.2) : -Math.pow(Math.abs(attack), 1.2);
+            const speedModifier = speed >= 0 ? Math.pow(speed, 1.2) : -Math.pow(Math.abs(speed), 1.2);
             
             powerScore = baseScore + attackModifier + speedModifier;
         } else {
@@ -104,17 +104,17 @@ class StatAnalysis {
     }
 
     getRarityBonus(rarity) {
-        // Lower rarity gets higher bonus, mythical (8) should be very similar to legendary (7)
+        // Lower rarity gets higher bonus - progression décroissante
         switch (rarity) {
-            case 0: return 10.0; // Basic - highest bonus
-            case 1: return 8.0;  // Common
-            case 2: return 6.0;  // Uncommon
-            case 3: return 4.5;  // Exotic
-            case 4: return 3.5;  // Rare
-            case 5: return 2.5;  // Special
-            case 6: return 1.8;  // Epic
-            case 7: return 1.2;  // Legendary
-            case 8: return 1.15; // Mythical - very similar to legendary
+            case 0: return 0.0; // Basic - le plus élevé
+            case 1: return 9.0;  // Common
+            case 2: return 7.5;  // Uncommon
+            case 3: return 6.0;  // Exotic
+            case 4: return 5.0;  // Rare
+            case 5: return 3.5;  // Special
+            case 6: return 2.8;  // Epic
+            case 7: return 2.1;  // Legendary
+            case 8: return 2.0;  // Mythical - le plus faible
             default: return 1.0;
         }
     }
