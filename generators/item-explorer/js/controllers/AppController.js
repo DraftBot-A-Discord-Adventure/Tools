@@ -12,10 +12,17 @@ class AppController {
         this.allItems = { weapons: [], armors: [], objects: [], potions: [] };
         this.currentBranch = CONSTANTS.DEFAULT_BRANCH;
         this.currentType = 'all';
-        this.filters = { search: '', rarity: 'all', nature: 'all' };
+        this.filters = { search: '', rarities: [], nature: 'all' };
         this.sort = { column: 'id', direction: 'asc' };
         
         this.initializeEventListeners();
+        this.initializeRarityFilter();
+    }
+
+    initializeRarityFilter() {
+        // Initialize all rarities as selected by default
+        this.filters.rarities = ['0', '1', '2', '3', '4', '5', '6', '7', '8'];
+        this.updateRaritySelectionText();
     }
 
     initializeEventListeners() {
@@ -33,12 +40,40 @@ class AppController {
             this.updateDisplay();
         });
         
-        // Filter dropdowns
-        this.elements.rarityFilter.addEventListener('change', (e) => {
-            this.filters.rarity = e.target.value;
+        // Rarity filter dropdown
+        this.elements.rarityToggleBtn.addEventListener('click', () => {
+            this.toggleRarityDropdown();
+        });
+        
+        // Handle "All" checkbox
+        this.elements.rarityAllCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                this.selectAllRarities();
+            } else {
+                this.deselectAllRarities();
+            }
+            this.updateRaritySelectionText();
             this.updateDisplay();
         });
         
+        // Handle individual rarity checkboxes
+        this.elements.rarityCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.updateRaritySelection();
+                this.updateRaritySelectionText();
+                this.updateDisplay();
+            });
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!this.elements.rarityToggleBtn.contains(e.target) && 
+                !this.elements.rarityDropdown.contains(e.target)) {
+                this.closeRarityDropdown();
+            }
+        });
+        
+        // Nature filter
         this.elements.natureFilter.addEventListener('change', (e) => {
             this.filters.nature = e.target.value;
             this.updateDisplay();
@@ -119,5 +154,69 @@ class AppController {
                 header.classList.add(`sort-${this.sort.direction}`);
             }
         });
+    }
+
+    // Rarity filter methods
+    toggleRarityDropdown() {
+        const isOpen = this.elements.rarityDropdown.classList.contains('show');
+        if (isOpen) {
+            this.closeRarityDropdown();
+        } else {
+            this.openRarityDropdown();
+        }
+    }
+
+    openRarityDropdown() {
+        this.elements.rarityDropdown.classList.add('show');
+        this.elements.rarityToggleBtn.classList.add('open');
+    }
+
+    closeRarityDropdown() {
+        this.elements.rarityDropdown.classList.remove('show');
+        this.elements.rarityToggleBtn.classList.remove('open');
+    }
+
+    selectAllRarities() {
+        this.filters.rarities = ['0', '1', '2', '3', '4', '5', '6', '7', '8'];
+        this.elements.rarityCheckboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+    }
+
+    deselectAllRarities() {
+        this.filters.rarities = [];
+        this.elements.rarityCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+
+    updateRaritySelection() {
+        this.filters.rarities = [];
+        this.elements.rarityCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                this.filters.rarities.push(checkbox.dataset.rarity);
+            }
+        });
+
+        // Update "All" checkbox state
+        const allSelected = this.filters.rarities.length === this.elements.rarityCheckboxes.length;
+        this.elements.rarityAllCheckbox.checked = allSelected;
+    }
+
+    updateRaritySelectionText() {
+        const selectedCount = this.filters.rarities.length;
+        const totalCount = this.elements.rarityCheckboxes.length;
+
+        if (selectedCount === 0) {
+            this.elements.raritySelectionText.textContent = 'None Selected';
+        } else if (selectedCount === totalCount) {
+            this.elements.raritySelectionText.textContent = 'All Selected';
+        } else if (selectedCount === 1) {
+            const rarityValue = this.filters.rarities[0];
+            const rarityName = CONSTANTS.RARITY_NAMES[parseInt(rarityValue)] || `Rarity ${rarityValue}`;
+            this.elements.raritySelectionText.textContent = rarityName;
+        } else {
+            this.elements.raritySelectionText.textContent = `${selectedCount} Selected`;
+        }
     }
 }

@@ -69,8 +69,8 @@ class FilterManager {
             const nameMatch = item.name && item.name.toLowerCase().includes(filters.search);
             const idMatch = item.id.toString().includes(filters.search);
             
-            // Rarity filter
-            const rarityMatch = filters.rarity === 'all' || item.rarity.toString() === filters.rarity;
+            // Rarity filter - now supports multiple rarities
+            const rarityMatch = filters.rarities.length === 0 || filters.rarities.includes(item.rarity.toString());
             
             // Nature filter (only for objects and potions)
             const natureMatch = filters.nature === 'all' || item.nature.toString() === filters.nature;

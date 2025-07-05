@@ -30,19 +30,55 @@
             
             <div class="filters-group">
                 <div class="control-group">
-                    <label for="rarity-filter">Rarity:</label>
-                    <select id="rarity-filter">
-                        <option value="all">All</option>
-                        <option value="0">Basic (0)</option>
-                        <option value="1">Common (1)</option>
-                        <option value="2">Uncommon (2)</option>
-                        <option value="3">Exotic (3)</option>
-                        <option value="4">Rare (4)</option>
-                        <option value="5">Special (5)</option>
-                        <option value="6">Epic (6)</option>
-                        <option value="7">Legendary (7)</option>
-                        <option value="8">Mythical (8)</option>
-                    </select>
+                    <label>Rarity:</label>
+                    <div class="rarity-filter-container">
+                        <button class="rarity-toggle-btn" id="rarity-toggle-btn">
+                            <span id="rarity-selection-text">All Selected</span>
+                            <span class="arrow">▼</span>
+                        </button>
+                        <div class="rarity-dropdown" id="rarity-dropdown">
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-all" checked data-rarity="all">
+                                <span>All</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-0" checked data-rarity="0">
+                                <span>Basic (0)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-1" checked data-rarity="1">
+                                <span>Common (1)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-2" checked data-rarity="2">
+                                <span>Uncommon (2)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-3" checked data-rarity="3">
+                                <span>Exotic (3)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-4" checked data-rarity="4">
+                                <span>Rare (4)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-5" checked data-rarity="5">
+                                <span>Special (5)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-6" checked data-rarity="6">
+                                <span>Epic (6)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-7" checked data-rarity="7">
+                                <span>Legendary (7)</span>
+                            </label>
+                            <label class="rarity-option">
+                                <input type="checkbox" id="rarity-8" checked data-rarity="8">
+                                <span>Mythical (8)</span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="control-group" id="nature-filter-container" style="display: none;">

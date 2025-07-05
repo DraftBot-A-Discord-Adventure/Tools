@@ -315,3 +315,82 @@ tr:hover {
 .column-hidden {
     display: none !important;
 }
+
+/* Rarity filter dropdown */
+.rarity-filter-container {
+    position: relative;
+}
+
+.rarity-toggle-btn {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 150px;
+    gap: 8px;
+    color: #333; /* Assure que le texte du bouton soit sombre */
+}
+
+.rarity-toggle-btn:hover {
+    background-color: #f8f9fa;
+    color: #333; /* Maintient la couleur sombre au survol */
+}
+
+.rarity-toggle-btn .arrow {
+    transition: transform 0.3s ease;
+}
+
+.rarity-toggle-btn.open .arrow {
+    transform: rotate(180deg);
+}
+
+.rarity-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.rarity-dropdown.show {
+    display: block;
+}
+
+.rarity-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    gap: 8px;
+    user-select: none;
+    color: #333 !important; /* Force la couleur sombre et surcharge les classes de rareté */
+}
+
+.rarity-option:hover {
+    background-color: #f8f9fa;
+    color: #333 !important; /* Force la couleur sombre au survol */
+}
+
+.rarity-option input[type="checkbox"] {
+    margin: 0;
+}
+
+.rarity-option span {
+    color: #333 !important; /* Force la couleur sombre pour les spans - surcharge les classes de rareté */
+}
+
+#rarity-selection-text {
+    color: #333 !important; /* Force spécifiquement le texte de sélection à être sombre */
+}

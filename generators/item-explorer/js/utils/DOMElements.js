@@ -10,11 +10,17 @@ class DOMElements {
         
         // Filters and search
         this.searchInput = document.getElementById('search');
-        this.rarityFilter = document.getElementById('rarity-filter');
         this.natureFilter = document.getElementById('nature-filter');
         this.natureFilterContainer = document.getElementById('nature-filter-container');
         this.colorCoding = document.getElementById('color-coding');
         this.colorLegend = document.getElementById('color-legend');
+        
+        // Rarity filter elements (new multi-select dropdown)
+        this.rarityToggleBtn = document.getElementById('rarity-toggle-btn');
+        this.rarityDropdown = document.getElementById('rarity-dropdown');
+        this.raritySelectionText = document.getElementById('rarity-selection-text');
+        this.rarityAllCheckbox = document.getElementById('rarity-all');
+        this.rarityCheckboxes = document.querySelectorAll('input[type="checkbox"][data-rarity]:not([data-rarity="all"])');
         
         // Type buttons
         this.typeButtons = document.querySelectorAll('.type-btn');
