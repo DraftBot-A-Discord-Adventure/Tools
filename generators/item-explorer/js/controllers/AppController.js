@@ -21,6 +21,49 @@ class AppController {
         
         this.initializeEventListeners();
         this.initializeRarityFilter();
+        this.loadBranches(); // Charger les branches au démarrage
+    }
+
+    async loadBranches() {
+        try {
+            const response = await fetch('https://api.github.com/repos/Crownicles/Crownicles/branches');
+            if (response.ok) {
+                const branches = await response.json();
+                this.populateBranchSelect(branches);
+            }
+        } catch (error) {
+            console.warn('Impossible de charger les branches:', error);
+            // Garder les branches par défaut si erreur
+        }
+    }
+
+    populateBranchSelect(branches) {
+        const select = this.elements.branchSelect;
+        const currentValue = select.value;
+        
+        // Vider le select
+        select.innerHTML = '';
+        
+        // Ajouter toutes les branches
+        branches.forEach(branch => {
+            const option = document.createElement('option');
+            option.value = branch.name;
+            option.textContent = branch.name;
+            select.appendChild(option);
+        });
+        
+        // Restaurer la valeur sélectionnée ou sélectionner master par défaut
+        if (branches.find(b => b.name === currentValue)) {
+            select.value = currentValue;
+        } else if (branches.find(b => b.name === 'master')) {
+            select.value = 'master';
+        } else if (branches.find(b => b.name === 'main')) {
+            select.value = 'main';
+        } else if (branches.length > 0) {
+            select.value = branches[0].name;
+        }
+        
+        this.currentBranch = select.value;
     }
 
     initializeRarityFilter() {
