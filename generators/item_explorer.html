@@ -655,47 +655,75 @@
                 
                 const iconsData = await response.text();
                 
-                // Parse the TypeScript file to extract the icons object
-                const match = iconsData.match(/export const CrowniclesIcons[^{]*({[\s\S]*});/);
-                if (match) {
-                    // Convert TypeScript object to JSON by removing type annotations and cleaning up
-                    let cleanedData = match[1]
-                        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove block comments
-                        .replace(/\/\/.*$/gm, '') // Remove line comments
-                        .replace(/\t/g, '') // Remove tabs
-                        .replace(/\n\s*\n/g, '\n') // Remove empty lines
-                        .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-                        .replace(/([{,]\s*)([a-zA-Z_$][a-zA-Z0-9_$]*)(:\s*)/g, '$1"$2"$3'); // Quote object keys
-                    
-                    try {
-                        const parsed = JSON.parse(cleanedData);
-                        crowniclesIcons = {
-                            rarity: parsed.rarity || [],
-                            itemNatures: parsed.itemNatures || [],
-                            itemCategories: parsed.itemCategories || [],
-                            weapons: parsed.weapons || {},
-                            armors: parsed.armors || {},
-                            objects: parsed.objects || {},
-                            potions: parsed.potions || {}
-                        };
-                        
-                        console.log('Loaded Crownicles icons:', {
-                            rarity: crowniclesIcons.rarity.length,
-                            itemNatures: crowniclesIcons.itemNatures.length,
-                            itemCategories: crowniclesIcons.itemCategories.length,
-                            weapons: Object.keys(crowniclesIcons.weapons).length,
-                            armors: Object.keys(crowniclesIcons.armors).length,
-                            objects: Object.keys(crowniclesIcons.objects).length,
-                            potions: Object.keys(crowniclesIcons.potions).length
-                        });
-                    } catch (parseError) {
-                        console.warn('Failed to parse CrowniclesIcons:', parseError);
-                        setFallbackIcons();
+                // Try to extract specific arrays we need using more targeted regex
+                try {
+                    // Extract rarity array
+                    const rarityMatch = iconsData.match(/rarity:\s*\[([\s\S]*?)\]/);
+                    if (rarityMatch) {
+                        const rarityStr = `[${rarityMatch[1]}]`.replace(/,(\s*\])/g, '$1');
+                        crowniclesIcons.rarity = JSON.parse(rarityStr);
                     }
-                } else {
-                    console.warn('Could not find CrowniclesIcons object in file');
-                    setFallbackIcons();
+                    
+                    // Extract itemNatures array
+                    const naturesMatch = iconsData.match(/itemNatures:\s*\[([\s\S]*?)\]/);
+                    if (naturesMatch) {
+                        const naturesStr = `[${naturesMatch[1]}]`.replace(/,(\s*\])/g, '$1');
+                        crowniclesIcons.itemNatures = JSON.parse(naturesStr);
+                    }
+                    
+                    // Extract itemCategories array
+                    const categoriesMatch = iconsData.match(/itemCategories:\s*\[([\s\S]*?)\]/);
+                    if (categoriesMatch) {
+                        const categoriesStr = `[${categoriesMatch[1]}]`.replace(/,(\s*\])/g, '$1');
+                        crowniclesIcons.itemCategories = JSON.parse(categoriesStr);
+                    }
+                    
+                    // Extract item-specific icons objects
+                    const extractItemIcons = (itemType) => {
+                        const regex = new RegExp(`${itemType}:\\s*\\{([\\s\\S]*?)\\}(?=,\\s*\\w+:|\\s*\\}\\s*$)`, 'm');
+                        const match = iconsData.match(regex);
+                        if (match) {
+                            try {
+                                // Clean up the object string
+                                let objStr = `{${match[1]}}`;
+                                // Quote unquoted keys
+                                objStr = objStr.replace(/(\w+):/g, '"$1":');
+                                // Remove trailing commas
+                                objStr = objStr.replace(/,(\s*})/g, '$1');
+                                return JSON.parse(objStr);
+                            } catch (e) {
+                                console.warn(`Failed to parse ${itemType} icons:`, e);
+                                return {};
+                            }
+                        }
+                        return {};
+                    };
+                    
+                    crowniclesIcons.weapons = extractItemIcons('weapons');
+                    crowniclesIcons.armors = extractItemIcons('armors');
+                    crowniclesIcons.objects = extractItemIcons('objects');
+                    crowniclesIcons.potions = extractItemIcons('potions');
+                    
+                    console.log('Loaded Crownicles icons with targeted parsing:', {
+                        rarity: crowniclesIcons.rarity.length,
+                        itemNatures: crowniclesIcons.itemNatures.length,
+                        itemCategories: crowniclesIcons.itemCategories.length,
+                        weapons: Object.keys(crowniclesIcons.weapons).length,
+                        armors: Object.keys(crowniclesIcons.armors).length,
+                        objects: Object.keys(crowniclesIcons.objects).length,
+                        potions: Object.keys(crowniclesIcons.potions).length
+                    });
+                    
+                    // If we got at least the basic arrays, consider it successful
+                    if (crowniclesIcons.rarity.length > 0 && crowniclesIcons.itemNatures.length > 0) {
+                        return; // Success!
+                    }
+                } catch (parseError) {
+                    console.warn('Targeted parsing failed, using fallback:', parseError);
                 }
+                
+                // If targeted parsing failed, use fallback
+                setFallbackIcons();
                 
             } catch (error) {
                 console.warn('Failed to load Crownicles icons:', error);
