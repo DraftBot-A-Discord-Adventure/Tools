@@ -111,15 +111,33 @@ class TableRenderer {
                     case 11: return item.power || 0;
                     default: return 0;
                 }
-            }).filter(v => v > 0).sort((a, b) => a - b);
+            }).filter(v => v !== undefined && v !== null); // Only filter out undefined/null, keep 0
             
             if (values.length > 0) {
-                const total = values.length;
-                ranges[columnIndex] = {
-                    excellent: values[Math.floor(total * 0.8)] || 0, // Top 20%
-                    good: values[Math.floor(total * 0.6)] || 0,      // Top 40%
-                    poor: values[Math.floor(total * 0.2)] || 0       // Bottom 20%
-                };
+                // Calculate simple statistics
+                const min = Math.min(...values);
+                const max = Math.max(...values);
+                const range = max - min;
+                
+                // If all values are the same, no color coding
+                if (range === 0) {
+                    ranges[columnIndex] = {
+                        excellent: max + 1, // Impossible threshold
+                        good: max + 1,
+                        poor: min - 1
+                    };
+                } else {
+                    // Calculate thresholds based on value distribution
+                    const excellentThreshold = min + (range * 0.8); // Top 20% of the range
+                    const goodThreshold = min + (range * 0.6);      // Top 40% of the range  
+                    const poorThreshold = min + (range * 0.2);      // Bottom 20% of the range
+                    
+                    ranges[columnIndex] = {
+                        excellent: excellentThreshold,
+                        good: goodThreshold,
+                        poor: poorThreshold
+                    };
+                }
             }
         });
         
@@ -141,7 +159,7 @@ class TableRenderer {
     }
 
     getColorClass(value, range) {
-        if (!range || value === 0) return null;
+        if (!range) return null;
         
         if (value >= range.excellent) {
             return 'stat-excellent';
