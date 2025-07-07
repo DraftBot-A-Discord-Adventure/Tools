@@ -76,6 +76,9 @@ class TableRenderer {
         } else {
             this.cellEditor.disableAddButton();
         }
+        
+        // Restaurer les highlights de modifications après reconstruction du tableau
+        this.cellEditor.updateModificationHighlights();
     }
 
     createTableRow(item, currentType, colorRanges, performanceData) {

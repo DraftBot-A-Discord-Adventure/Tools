@@ -42,10 +42,29 @@ class CellEditor {
     makeCellsEditable(row, item) {
         const cells = row.querySelectorAll('td');
         
-        // Define which columns are editable (exclude ID, emoji, calculated fields, performance)
-        const editableColumns = [2, 3, 4, 5, 6, 10, 11, 13]; // name, rarity, type, rawAttack, rawDefense, nature, power, tags
-        const calculatedColumns = [7, 8, 9, 12]; // attack, defense, speed, performance - auto-calculated
-        const nonEditableColumns = [0, 1]; // ID, emoji
+        // Define editable columns based on item type
+        let editableColumns = [];
+        let calculatedColumns = [];
+        
+        if (item.type === 'weapon') {
+            // Weapons: rawAttack, defense, speed (+ common fields)
+            editableColumns = [2, 3, 4, 5, 8, 9, 13]; // name, rarity, type, rawAttack, defense, speed, tags
+            calculatedColumns = [7, 12]; // attack (calculé), performance
+        } else if (item.type === 'armor') {
+            // Armors: rawDefense, attack, speed (+ common fields)  
+            editableColumns = [2, 3, 4, 6, 7, 9, 13]; // name, rarity, type, rawDefense, attack, speed, tags
+            calculatedColumns = [8, 12]; // defense (calculé), performance
+        } else if (item.type === 'object' || item.type === 'potion') {
+            // Objects/Potions: power, nature, rarity (+ common fields)
+            editableColumns = [2, 3, 4, 10, 11, 13]; // name, rarity, type, nature, power, tags
+            calculatedColumns = [7, 8, 9, 12]; // attack, defense, speed (calculés), performance
+        } else {
+            // Fallback - tous les champs éditables par défaut
+            editableColumns = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13];
+            calculatedColumns = [12]; // performance
+        }
+        
+        const nonEditableColumns = [0, 1]; // ID, emoji - toujours non éditables
         
         cells.forEach((cell, index) => {
             if (editableColumns.includes(index)) {
@@ -56,6 +75,10 @@ class CellEditor {
             } else if (nonEditableColumns.includes(index)) {
                 cell.classList.add('non-editable');
                 cell.title = 'Ce champ n\'est pas éditable';
+            } else {
+                // Autres colonnes non éditables pour ce type d'item
+                cell.classList.add('non-editable');
+                cell.title = `Ce champ n'est pas éditable pour les ${item.type}s`;
             }
         });
     }
@@ -100,7 +123,7 @@ class CellEditor {
             case 4: // type
                 cell.classList.add('type-input');
                 break;
-            case 5: case 6: case 11: // numeric fields
+            case 5: case 6: case 7: case 8: case 9: case 11: // numeric fields (ajout de 7, 8, 9)
                 cell.classList.add('numeric-input');
                 break;
             case 10: // nature
@@ -263,8 +286,8 @@ class CellEditor {
         const cell = event.target;
         const value = cell.textContent.trim();
 
-        // Numeric validation for numeric fields
-        if ([5, 6, 11].includes(columnIndex)) { // rawAttack, rawDefense, power
+        // Numeric validation for numeric fields (ajout de 7, 8, 9)
+        if ([5, 6, 7, 8, 9, 11].includes(columnIndex)) { // rawAttack, rawDefense, attack, defense, speed, power
             // Remove non-numeric characters
             const numericValue = value.replace(/[^0-9]/g, '');
             if (value !== numericValue) {
@@ -343,6 +366,15 @@ class CellEditor {
             case 6: // rawDefense
                 item.rawDefense = parseInt(value) || 0;
                 break;
+            case 7: // attack (éditable pour les armures)
+                item.attack = parseInt(value) || 0;
+                break;
+            case 8: // defense (éditable pour les armes)
+                item.defense = parseInt(value) || 0;
+                break;
+            case 9: // speed (éditable pour armes et armures)
+                item.speed = parseInt(value) || 0;
+                break;
             case 11: // power
                 item.power = parseInt(value) || 0;
                 break;
@@ -366,7 +398,7 @@ class CellEditor {
                     errorMessage = 'Name cannot be empty';
                 }
                 break;
-            case 5: case 6: case 11: // numeric fields
+            case 5: case 6: case 7: case 8: case 9: case 11: // numeric fields (ajout de 7, 8, 9)
                 if (value && (isNaN(parseInt(value)) || parseInt(value) < 0)) {
                     isValid = false;
                     errorMessage = 'Must be a positive number';
@@ -427,7 +459,13 @@ class CellEditor {
         const rows = document.querySelectorAll(`#items-table tbody tr`);
         rows.forEach(row => {
             const idCell = row.querySelector('td:first-child');
-            if (idCell && idCell.textContent.trim() == item.id) {
+            const typeCell = row.querySelector('td:nth-child(5)'); // Type column
+            
+            // Vérifier à la fois l'ID ET le type pour éviter les conflits
+            if (idCell && typeCell && 
+                idCell.textContent.trim() == item.id && 
+                typeCell.textContent.trim() === item.type) {
+                
                 // Update calculated fields
                 const cells = row.querySelectorAll('td');
                 if (cells[7]) cells[7].textContent = item.attack || item.finalAttack || 0; // attack
@@ -526,7 +564,13 @@ class CellEditor {
                 const rows = document.querySelectorAll(`#items-table tbody tr`);
                 rows.forEach(row => {
                     const idCell = row.querySelector('td:first-child');
-                    if (idCell && idCell.textContent.trim() == itemId) {
+                    const typeCell = row.querySelector('td:nth-child(5)'); // Type column
+                    
+                    // Vérifier à la fois l'ID ET le type pour éviter les conflits
+                    if (idCell && typeCell && 
+                        idCell.textContent.trim() == itemId && 
+                        typeCell.textContent.trim() === data.item.type) {
+                        
                         const cell = row.querySelectorAll('td')[parseInt(columnIndex)];
                         if (cell) {
                             if (this.highlightModifications) {
@@ -561,17 +605,17 @@ class CellEditor {
             tags: []
         };
 
-        // Add to the appropriate category in allItems
+        // Add to the appropriate category in allItems - à la PREMIÈRE position
         if (window.app && window.app.allItems) {
-            window.app.allItems.objects.push(newItem);
+            window.app.allItems.objects.unshift(newItem); // unshift au lieu de push
             
             // Refresh the display to show the new item
             window.app.updateDisplay();
             
-            // Scroll to the new row
+            // Focus sur la première ligne (le nouvel item)
             setTimeout(() => {
                 const table = document.getElementById('items-table');
-                const newRow = table.querySelector(`tbody tr:last-child`);
+                const newRow = table.querySelector(`tbody tr:first-child`); // first-child au lieu de last-child
                 if (newRow) {
                     newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     // Focus on the name cell for immediate editing
