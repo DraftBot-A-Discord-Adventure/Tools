@@ -150,9 +150,17 @@
         
         <div class="table-container">
             <div class="add-row-container">
-                <button class="add-row-btn" id="add-row-btn" disabled>
+                <button class="add-row-btn" id="add-row-btn">
                     Ajouter une ligne
                 </button>
+                
+                <!-- Boutons spécifiques pour "All Items" -->
+                <div class="add-type-buttons" id="add-type-buttons" style="display: none;">
+                    <button class="add-type-btn" data-type="weapons">➕ Ajouter une Weapon</button>
+                    <button class="add-type-btn" data-type="armors">➕ Ajouter une Armor</button>
+                    <button class="add-type-btn" data-type="objects">➕ Ajouter un Object</button>
+                    <button class="add-type-btn" data-type="potions">➕ Ajouter une Potion</button>
+                </div>
             </div>
             <table id="items-table">
                 <thead>

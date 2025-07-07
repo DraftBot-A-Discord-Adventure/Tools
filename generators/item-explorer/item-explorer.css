@@ -640,6 +640,57 @@ tr:hover {
     font-size: 12px;
 }
 
+/* Boutons spécifiques pour "All Items" */
+.add-type-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.add-type-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.add-type-btn:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.add-type-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Responsive pour les boutons d'ajout */
+@media (max-width: 768px) {
+    .add-type-buttons {
+        grid-template-columns: 1fr;
+        max-width: 300px;
+    }
+}
+
+/* Nature input styling */
+.nature-input {
+    background: linear-gradient(45deg, #e8f5e8, #ffffff);
+}
+
 /* Non-editable cells styling */
 .non-editable {
     background-color: #f8f9fa !important;
@@ -647,67 +698,21 @@ tr:hover {
     cursor: default;
 }
 
-/* Save changes indicator */
-.save-indicator {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background-color: #dc3545;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 5px;
-    font-size: 14px;
-    font-weight: 500;
-    display: none;
-    z-index: 1000;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.save-indicator.show {
-    display: block;
-}
-
-.save-indicator.saved {
-    background-color: #28a745;
-}
-
-/* Input validation styling */
-.invalid-input {
-    background-color: #f8d7da !important;
-}
-
-.validation-error {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: #dc3545;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    display: none;
-}
-
-.editable-cell.invalid .validation-error {
-    display: block;
-}
-
-/* Dropdown editors for cells */
+/* Cell dropdown styling pour les cellules éditables */
 .cell-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background: white;
+    background-color: white;
     border: 1px solid #ddd;
     border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    max-height: 200px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-height: 250px;
     overflow-y: auto;
     z-index: 2000;
     display: none;
+    min-width: 200px;
 }
 
 .cell-dropdown.show {
@@ -715,44 +720,47 @@ tr:hover {
 }
 
 .dropdown-option {
-    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
     cursor: pointer;
-    border-bottom: 1px solid #eee;
-}
-
-.dropdown-option:hover {
-    background-color: #f8f9fa;
+    gap: 8px;
+    user-select: none;
+    color: #333;
+    border-bottom: 1px solid #f1f1f1;
+    transition: background-color 0.2s ease;
 }
 
 .dropdown-option:last-child {
     border-bottom: none;
 }
 
+.dropdown-option:hover {
+    background-color: #f8f9fa;
+}
+
 .dropdown-option.selected {
-    background-color: #007bff;
-    color: white;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    font-weight: 500;
 }
 
-/* Numeric input styling */
-.numeric-input {
-    background: linear-gradient(45deg, #e3f2fd, #ffffff);
+.dropdown-option.selected::before {
+    content: "✓";
+    color: #1976d2;
+    font-weight: bold;
+    margin-right: 5px;
 }
 
-.numeric-input:focus {
-    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
-}
-
-/* Type input styling */
-.type-input {
-    background: linear-gradient(45deg, #f3e5f5, #ffffff);
-}
-
-/* Rarity input styling */
+/* Input styling pour les cellules éditables */
 .rarity-input {
     background: linear-gradient(45deg, #fff3e0, #ffffff);
 }
 
-/* Nature input styling */
-.nature-input {
+.type-input {
     background: linear-gradient(45deg, #e8f5e8, #ffffff);
+}
+
+.numeric-input {
+    background: linear-gradient(45deg, #e3f2fd, #ffffff);
 }

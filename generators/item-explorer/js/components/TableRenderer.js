@@ -70,12 +70,11 @@ class TableRenderer {
         // Update column visibility after rendering
         this.filterManager.updateColumnVisibility(currentType);
         
-        // Enable/disable add button based on whether items are loaded
-        if (itemsToDisplay.length > 0) {
-            this.cellEditor.enableAddButton();
-        } else {
-            this.cellEditor.disableAddButton();
-        }
+        // Toujours activer le bouton d'ajout - même avant chargement des données
+        this.cellEditor.enableAddButton();
+        
+        // Gérer l'affichage des boutons selon le type de page
+        this.cellEditor.updateAddButtonsVisibility(currentType);
         
         // Restaurer les highlights de modifications après reconstruction du tableau
         this.cellEditor.updateModificationHighlights();

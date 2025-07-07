@@ -20,13 +20,22 @@ class CellEditor {
             });
         }
 
-        // Add row button
+        // Add row button (bouton simple)
         const addRowBtn = document.getElementById('add-row-btn');
         if (addRowBtn) {
             addRowBtn.addEventListener('click', () => {
                 this.addNewRow();
             });
         }
+
+        // Add type buttons (boutons spécifiques pour "All Items")
+        const addTypeButtons = document.querySelectorAll('.add-type-btn');
+        addTypeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const itemType = btn.dataset.type;
+                this.createNewItem(itemType);
+            });
+        });
 
         // Close dropdown when clicking outside
         document.addEventListener('click', (e) => {
@@ -586,11 +595,32 @@ class CellEditor {
     }
 
     addNewRow() {
-        // Create a new item object
+        // Créer directement l'item du type filtré selon la page actuelle
+        this.createNewItem(window.app.currentType);
+    }
+
+    createNewItem(itemType) {
+        // Initialiser allItems si ce n'est pas encore fait
+        if (!window.app.allItems || Object.keys(window.app.allItems).length === 0) {
+            window.app.allItems = { weapons: [], armors: [], objects: [], potions: [] };
+        }
+        
+        // S'assurer que la catégorie existe
+        if (!window.app.allItems[itemType]) {
+            window.app.allItems[itemType] = [];
+        }
+        
+        // Trouver le prochain ID disponible pour ce type
+        const nextId = this.getNextAvailableId(itemType);
+        
+        // Déterminer le type au singulier pour l'objet item
+        const singularType = itemType.replace(/s$/, ''); // weapons -> weapon, etc.
+        
+        // Créer le nouvel item avec les valeurs par défaut
         const newItem = {
-            id: this.nextNewId++,
-            name: `New Item ${this.nextNewId - 1}`,
-            type: 'object',
+            id: nextId,
+            name: `New ${singularType.charAt(0).toUpperCase() + singularType.slice(1)} ${nextId}`,
+            type: singularType,
             rarity: 0,
             rawAttack: 0,
             rawDefense: 0,
@@ -605,32 +635,79 @@ class CellEditor {
             tags: []
         };
 
-        // Add to the appropriate category in allItems - à la PREMIÈRE position
-        if (window.app && window.app.allItems) {
-            window.app.allItems.objects.unshift(newItem); // unshift au lieu de push
-            
-            // Refresh the display to show the new item
-            window.app.updateDisplay();
-            
-            // Focus sur la première ligne (le nouvel item)
-            setTimeout(() => {
-                const table = document.getElementById('items-table');
-                const newRow = table.querySelector(`tbody tr:first-child`); // first-child au lieu de last-child
-                if (newRow) {
-                    newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Focus on the name cell for immediate editing
-                    const nameCell = newRow.querySelector('td:nth-child(3)');
-                    if (nameCell) {
-                        nameCell.focus();
-                        // Select all text for easy replacement
-                        const range = document.createRange();
-                        range.selectNodeContents(nameCell);
-                        const selection = window.getSelection();
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
+        // Ajouter à la catégorie appropriée - à la PREMIÈRE position
+        window.app.allItems[itemType].unshift(newItem);
+        
+        // Refresh the display to show the new item
+        window.app.updateDisplay();
+        
+        // Focus sur la première ligne (le nouvel item)
+        setTimeout(() => {
+            const table = document.getElementById('items-table');
+            const newRow = table.querySelector(`tbody tr:first-child`);
+            if (newRow) {
+                newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Focus on the name cell for immediate editing
+                const nameCell = newRow.querySelector('td:nth-child(3)');
+                if (nameCell) {
+                    nameCell.focus();
+                    // Select all text for easy replacement
+                    const range = document.createRange();
+                    range.selectNodeContents(nameCell);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
                 }
-            }, 100);
+            }
+        }, 100);
+    }
+
+    getNextAvailableId(itemType) {
+        // Obtenir tous les items du type spécifié
+        const items = window.app.allItems[itemType] || [];
+        
+        // Si pas d'items dans cette catégorie, commencer à 0
+        if (items.length === 0) {
+            return 0;
+        }
+        
+        // Extraire tous les IDs existants et les trier
+        const existingIds = items.map(item => item.id).sort((a, b) => a - b);
+        
+        // Trouver le premier ID manquant, en commençant par 1 (car 0 est déjà pris)
+        let nextId = 1;
+        for (const id of existingIds) {
+            if (id === nextId) {
+                nextId++;
+            } else if (id > nextId) {
+                break; // On a trouvé un trou dans la séquence
+            }
+        }
+        
+        return nextId;
+    }
+
+    // Méthode pour gérer l'affichage des boutons selon le type de page
+    updateAddButtonsVisibility(currentType) {
+        const singleBtn = document.getElementById('add-row-btn');
+        const multipleButtons = document.getElementById('add-type-buttons');
+        
+        if (currentType === 'all') {
+            // Page "All Items" - afficher les 4 boutons spécifiques
+            if (singleBtn) singleBtn.style.display = 'none';
+            if (multipleButtons) multipleButtons.style.display = 'grid';
+            
+            // Activer/désactiver les boutons spécifiques selon les données chargées
+            const addTypeButtons = document.querySelectorAll('.add-type-btn');
+            addTypeButtons.forEach(btn => {
+                const itemType = btn.dataset.type;
+                const hasData = window.app && window.app.allItems && Object.values(window.app.allItems).some(category => category.length > 0);
+                btn.disabled = !hasData;
+            });
+        } else {
+            // Page spécifique (weapons, armors, etc.) - afficher le bouton simple
+            if (singleBtn) singleBtn.style.display = 'inline-flex';
+            if (multipleButtons) multipleButtons.style.display = 'none';
         }
     }
 }
