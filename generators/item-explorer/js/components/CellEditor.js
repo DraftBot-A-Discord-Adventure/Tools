@@ -295,19 +295,25 @@ class CellEditor {
         const cell = event.target;
         const value = cell.textContent.trim();
 
-        // Numeric validation for numeric fields (ajout de 7, 8, 9)
+        // Numeric validation for numeric fields - allow negative numbers
         if ([5, 6, 7, 8, 9, 11].includes(columnIndex)) { // rawAttack, rawDefense, attack, defense, speed, power
-            // Remove non-numeric characters
-            const numericValue = value.replace(/[^0-9]/g, '');
-            if (value !== numericValue) {
-                cell.textContent = numericValue;
-                // Move cursor to end
-                const range = document.createRange();
-                const selection = window.getSelection();
-                range.selectNodeContents(cell);
-                range.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(range);
+            // Simple validation: allow digits, minus sign at the beginning only
+            const isValidNumeric = /^-?\d*$/.test(value);
+            
+            if (!isValidNumeric && value !== '') {
+                // Remove invalid characters but preserve minus at start
+                const cleanValue = value.replace(/[^0-9-]/g, '').replace(/(?!^)-/g, '');
+                
+                if (value !== cleanValue) {
+                    cell.textContent = cleanValue;
+                    // Move cursor to end
+                    const range = document.createRange();
+                    const selection = window.getSelection();
+                    range.selectNodeContents(cell);
+                    range.collapse(false);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
             }
         }
 
@@ -407,10 +413,10 @@ class CellEditor {
                     errorMessage = 'Name cannot be empty';
                 }
                 break;
-            case 5: case 6: case 7: case 8: case 9: case 11: // numeric fields (ajout de 7, 8, 9)
-                if (value && (isNaN(parseInt(value)) || parseInt(value) < 0)) {
+            case 5: case 6: case 7: case 8: case 9: case 11: // numeric fields - allow negative numbers
+                if (value && isNaN(parseInt(value))) {
                     isValid = false;
-                    errorMessage = 'Must be a positive number';
+                    errorMessage = 'Must be a valid number';
                 }
                 break;
             case 13: // tags
@@ -571,7 +577,7 @@ class CellEditor {
             if (data.isModified) {
                 const [itemId, columnIndex] = cellKey.split('-');
                 const rows = document.querySelectorAll(`#items-table tbody tr`);
-                rows.forEach(row => {
+                rows.forEach((row) => {
                     const idCell = row.querySelector('td:first-child');
                     const typeCell = row.querySelector('td:nth-child(5)'); // Type column
                     
@@ -641,11 +647,14 @@ class CellEditor {
         // Refresh the display to show the new item
         window.app.updateDisplay();
         
-        // Focus sur la première ligne (le nouvel item)
+        // Focus sur la première ligne (le nouvel item) et la marquer comme modifiée
         setTimeout(() => {
             const table = document.getElementById('items-table');
             const newRow = table.querySelector(`tbody tr:first-child`);
             if (newRow) {
+                // Marquer toutes les cellules éditables de la nouvelle ligne comme modifiées
+                this.markNewRowAsModified(newRow, newItem);
+                
                 newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 // Focus on the name cell for immediate editing
                 const nameCell = newRow.querySelector('td:nth-child(3)');
@@ -660,6 +669,43 @@ class CellEditor {
                 }
             }
         }, 100);
+    }
+
+    // Nouvelle méthode pour marquer une ligne nouvellement créée comme modifiée
+    markNewRowAsModified(row, item) {
+        const cells = row.querySelectorAll('td');
+        
+        // Définir quelles colonnes marquer comme modifiées pour une nouvelle ligne
+        const columnsToMark = [2, 3, 4]; // name, rarity, type - les champs de base
+        
+        // Ajouter des colonnes spécifiques selon le type d'item
+        if (item.type === 'weapon') {
+            columnsToMark.push(5); // rawAttack
+        } else if (item.type === 'armor') {
+            columnsToMark.push(6); // rawDefense
+        } else if (item.type === 'object' || item.type === 'potion') {
+            columnsToMark.push(10, 11); // nature, power
+        }
+        
+        cells.forEach((cell, index) => {
+            if (columnsToMark.includes(index)) {
+                const cellKey = `${item.id}-${index}`;
+                
+                // Stocker la valeur originale comme vide ou valeur par défaut
+                this.modifiedCells.set(cellKey, {
+                    originalValue: '', // Considérer que l'original était vide
+                    currentValue: cell.textContent.trim(),
+                    isModified: true,
+                    item: item,
+                    columnIndex: index
+                });
+                
+                // Appliquer le style de modification si le toggle est activé
+                if (this.highlightModifications) {
+                    cell.classList.add('modified-cell');
+                }
+            }
+        });
     }
 
     getNextAvailableId(itemType) {
