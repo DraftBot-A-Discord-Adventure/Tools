@@ -5,6 +5,7 @@ class TableRenderer {
         this.iconService = iconService || new IconService(elements);
         this.filterManager = new FilterManager(elements);
         this.statAnalysis = null; // Will be injected by AppController
+        this.cellEditor = new CellEditor(elements); // Add cell editor
     }
 
     setStatAnalysis(statAnalysis) {
@@ -61,10 +62,20 @@ class TableRenderer {
         itemsToDisplay.forEach(item => {
             const row = this.createTableRow(item, currentType, colorRanges, performanceData);
             this.elements.tableBody.appendChild(row);
+            
+            // Make cells editable after adding to DOM
+            this.cellEditor.makeCellsEditable(row, item);
         });
-        
+
         // Update column visibility after rendering
         this.filterManager.updateColumnVisibility(currentType);
+        
+        // Enable/disable add button based on whether items are loaded
+        if (itemsToDisplay.length > 0) {
+            this.cellEditor.enableAddButton();
+        } else {
+            this.cellEditor.disableAddButton();
+        }
     }
 
     createTableRow(item, currentType, colorRanges, performanceData) {

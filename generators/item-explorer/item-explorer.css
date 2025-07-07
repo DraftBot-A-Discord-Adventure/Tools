@@ -539,3 +539,220 @@ tr:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* Editable cells */
+.editable-cell {
+    cursor: text;
+    position: relative;
+    min-width: 60px;
+}
+
+.editable-cell:hover {
+    background-color: #f8f9fa !important;
+}
+
+.editable-cell:focus {
+    background-color: white !important;
+}
+
+.editable-cell[contenteditable="true"] {
+    padding: 8px;
+    border: none;
+    background: white;
+    min-height: 20px;
+}
+
+/* Modified cells highlighting */
+.modified-cell {
+    border: 3px solid #ffc107 !important;
+    box-shadow: 0 0 5px rgba(255, 193, 7, 0.5) !important;
+    position: relative;
+}
+
+.modified-cell::after {
+    content: "✏️";
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    font-size: 10px;
+    pointer-events: none;
+    background: #ffc107;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Toggle for showing modifications */
+.modifications-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 15px;
+}
+
+.modifications-toggle input[type="checkbox"] {
+    margin: 0;
+}
+
+.modifications-toggle label {
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 500;
+    color: #e67e22;
+}
+
+/* Add row button */
+.add-row-container {
+    margin: 10px 0;
+    text-align: center;
+}
+
+.add-row-btn {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-row-btn:hover {
+    background-color: #218838;
+}
+
+.add-row-btn:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.add-row-btn::before {
+    content: "➕";
+    font-size: 12px;
+}
+
+/* Non-editable cells styling */
+.non-editable {
+    background-color: #f8f9fa !important;
+    color: #6c757d;
+    cursor: default;
+}
+
+/* Save changes indicator */
+.save-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #dc3545;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    display: none;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.save-indicator.show {
+    display: block;
+}
+
+.save-indicator.saved {
+    background-color: #28a745;
+}
+
+/* Input validation styling */
+.invalid-input {
+    background-color: #f8d7da !important;
+}
+
+.validation-error {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #dc3545;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    display: none;
+}
+
+.editable-cell.invalid .validation-error {
+    display: block;
+}
+
+/* Dropdown editors for cells */
+.cell-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 2000;
+    display: none;
+}
+
+.cell-dropdown.show {
+    display: block;
+}
+
+.dropdown-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-option:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-option:last-child {
+    border-bottom: none;
+}
+
+.dropdown-option.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Numeric input styling */
+.numeric-input {
+    background: linear-gradient(45deg, #e3f2fd, #ffffff);
+}
+
+.numeric-input:focus {
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
+}
+
+/* Type input styling */
+.type-input {
+    background: linear-gradient(45deg, #f3e5f5, #ffffff);
+}
+
+/* Rarity input styling */
+.rarity-input {
+    background: linear-gradient(45deg, #fff3e0, #ffffff);
+}
+
+/* Nature input styling */
+.nature-input {
+    background: linear-gradient(45deg, #e8f5e8, #ffffff);
+}

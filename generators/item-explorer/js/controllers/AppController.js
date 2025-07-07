@@ -19,6 +19,9 @@ class AppController {
         this.filters = { search: '', rarities: [], nature: 'all' };
         this.sort = { column: 'id', direction: 'asc' };
         
+        // Make app globally accessible for CellEditor
+        window.app = this;
+        
         this.initializeEventListeners();
         this.initializeRarityFilter();
         this.loadBranches(); // Charger les branches au démarrage

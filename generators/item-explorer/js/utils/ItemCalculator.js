@@ -103,4 +103,87 @@ class ItemCalculator {
             item.finalSpeed = 0;
         }
     }
+
+    // New methods for individual stat calculations used by CellEditor
+    calculateWeaponAttack(item) {
+        const multiplier = CONSTANTS.RARITY_MULTIPLIERS[item.rarity] || 1;
+        const rawAttack = item.rawAttack || 0;
+        
+        if (rawAttack === 0) return 0;
+        
+        return Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                         Math.pow(1.0569 + 0.1448 / multiplier, rawAttack));
+    }
+
+    calculateWeaponDefense(item) {
+        // Weapons don't have defense from rawDefense, only from item bonuses
+        return item.defense || 0;
+    }
+
+    calculateWeaponSpeed(item) {
+        // Weapons don't calculate speed from raw stats, only from item bonuses
+        return item.speed || 0;
+    }
+
+    calculateArmorAttack(item) {
+        // Armors don't calculate attack from raw stats, only from item bonuses
+        return item.attack || 0;
+    }
+
+    calculateArmorDefense(item) {
+        const multiplier = CONSTANTS.RARITY_MULTIPLIERS[item.rarity] || 1;
+        const rawDefense = item.rawDefense || 0;
+        
+        if (rawDefense === 0) return 0;
+        
+        return Math.round(1.15053 * Math.pow(multiplier, 2.3617) * 
+                         Math.pow(1.0569 + 0.1448 / multiplier, rawDefense));
+    }
+
+    calculateArmorSpeed(item) {
+        // Armors don't calculate speed from raw stats, only from item bonuses
+        return item.speed || 0;
+    }
+
+    calculateObjectFinalAttack(item) {
+        if (item.nature === 3) { // ATTACK nature
+            return item.power || 0;
+        }
+        return 0;
+    }
+
+    calculateObjectFinalDefense(item) {
+        if (item.nature === 4) { // DEFENSE nature
+            return item.power || 0;
+        }
+        return 0;
+    }
+
+    calculateObjectFinalSpeed(item) {
+        if (item.nature === 2) { // SPEED nature
+            return item.power || 0;
+        }
+        return 0;
+    }
+
+    calculatePotionFinalAttack(item) {
+        if (item.nature === 3) { // ATTACK nature
+            return item.power || 0;
+        }
+        return 0;
+    }
+
+    calculatePotionFinalDefense(item) {
+        if (item.nature === 4) { // DEFENSE nature
+            return item.power || 0;
+        }
+        return 0;
+    }
+
+    calculatePotionFinalSpeed(item) {
+        if (item.nature === 2) { // SPEED nature
+            return item.power || 0;
+        }
+        return 0;
+    }
 }

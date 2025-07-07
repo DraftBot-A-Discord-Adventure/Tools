@@ -100,6 +100,11 @@
                     <input type="checkbox" id="color-coding" />
                     <label for="color-coding">Color Coding</label>
                 </div>
+                
+                <div class="modifications-toggle">
+                    <input type="checkbox" id="highlight-modifications" />
+                    <label for="highlight-modifications">Highlight Modifications</label>
+                </div>
             </div>
         </div>
         
@@ -144,6 +149,11 @@
         </div>
         
         <div class="table-container">
+            <div class="add-row-container">
+                <button class="add-row-btn" id="add-row-btn" disabled>
+                    Ajouter une ligne
+                </button>
+            </div>
             <table id="items-table">
                 <thead>
                     <tr>
@@ -207,6 +217,7 @@
     <script src="js/components/FilterManager.js"></script>
     <script src="js/components/StatsManager.js"></script>
     <script src="js/components/StatAnalysis.js"></script>
+    <script src="js/components/CellEditor.js"></script>
     <script src="js/components/TableRenderer.js"></script>
     <script src="js/controllers/AppController.js"></script>
     <script src="js/app.js"></script>
