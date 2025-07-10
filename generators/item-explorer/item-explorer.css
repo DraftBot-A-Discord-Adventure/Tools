@@ -191,6 +191,16 @@ th {
     top: 0;
     cursor: pointer;
     user-select: none;
+    z-index: 10; /* S'assurer que tous les headers sont au-dessus du contenu */
+}
+
+th.checkbox-header {
+    background-color: #f2f2f2;
+    position: sticky;
+    top: 0;
+    z-index: 11; /* Header de checkbox légèrement au-dessus */
+    width: 40px;
+    text-align: center;
 }
 
 th:hover {
@@ -221,6 +231,7 @@ tr:hover {
     margin-top: 20px;
     max-height: calc(100vh - 350px);
     min-height: 400px;
+    position: relative; /* Important pour le contexte sticky */
 }
 
 /* Rarity colors */

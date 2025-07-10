@@ -156,17 +156,23 @@ class TableRenderer {
 
     updateTableHeader() {
         const headerRow = this.elements.itemsTable.querySelector('thead tr');
-        const firstHeader = headerRow.querySelector('th');
+        if (!headerRow) return;
         
-        // Check if checkbox header already exists
-        if (!headerRow.querySelector('.checkbox-header')) {
-            const checkboxHeader = document.createElement('th');
-            checkboxHeader.className = 'checkbox-header';
-            checkboxHeader.textContent = '☑️';
-            checkboxHeader.style.width = '40px';
-            checkboxHeader.style.textAlign = 'center';
-            headerRow.insertBefore(checkboxHeader, firstHeader);
-        }
+        // Remove any existing checkbox headers to avoid duplicates
+        const existingCheckboxHeaders = headerRow.querySelectorAll('.checkbox-header');
+        existingCheckboxHeaders.forEach(header => header.remove());
+        
+        // Get the first non-checkbox header
+        const firstHeader = headerRow.querySelector('th:not(.checkbox-header)');
+        if (!firstHeader) return;
+        
+        // Create and add checkbox header
+        const checkboxHeader = document.createElement('th');
+        checkboxHeader.className = 'checkbox-header';
+        checkboxHeader.textContent = '☑️';
+        
+        // Insert before the first header
+        headerRow.insertBefore(checkboxHeader, firstHeader);
     }
 
     calculateColorRanges(items) {
