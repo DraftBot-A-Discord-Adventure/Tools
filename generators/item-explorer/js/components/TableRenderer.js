@@ -78,6 +78,11 @@ class TableRenderer {
         
         // Restaurer les highlights de modifications après reconstruction du tableau
         this.cellEditor.updateModificationHighlights();
+        
+        // NOUVEAU: Mettre à jour les statistiques avec les items actuellement visibles
+        if (window.app && window.app.statsManager) {
+            window.app.statsManager.updateVisibleStats(itemsToDisplay, currentType);
+        }
     }
 
     createTableRow(item, currentType, colorRanges, performanceData) {
