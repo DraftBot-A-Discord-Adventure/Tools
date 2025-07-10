@@ -87,6 +87,8 @@ class AppController {
         // Search input
         this.elements.searchInput.addEventListener('input', (e) => {
             this.filters.search = e.target.value.toLowerCase();
+            // Nettoyer les items nouvellement créés lors d'une recherche
+            this.tableRenderer.cellEditor.clearNewlyCreatedItems();
             this.updateDisplay();
         });
         
@@ -102,6 +104,8 @@ class AppController {
             } else {
                 this.deselectAllRarities();
             }
+            // Nettoyer les items nouvellement créés lors d'un changement de filtre
+            this.tableRenderer.cellEditor.clearNewlyCreatedItems();
             this.updateRaritySelectionText();
             this.updateDisplay();
         });
@@ -110,6 +114,8 @@ class AppController {
         this.elements.rarityCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', () => {
                 this.updateRaritySelection();
+                // Nettoyer les items nouvellement créés lors d'un changement de filtre
+                this.tableRenderer.cellEditor.clearNewlyCreatedItems();
                 this.updateRaritySelectionText();
                 this.updateDisplay();
             });
@@ -126,6 +132,8 @@ class AppController {
         // Nature filter
         this.elements.natureFilter.addEventListener('change', (e) => {
             this.filters.nature = e.target.value;
+            // Nettoyer les items nouvellement créés lors d'un changement de filtre
+            this.tableRenderer.cellEditor.clearNewlyCreatedItems();
             this.updateDisplay();
         });
         
@@ -143,6 +151,8 @@ class AppController {
                 this.elements.typeButtons.forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
                 this.currentType = e.target.dataset.type;
+                // Nettoyer les items nouvellement créés lors d'un changement de type
+                this.tableRenderer.cellEditor.clearNewlyCreatedItems();
                 this.filterManager.updateNatureFilterVisibility(this.currentType);
                 this.updateDisplay();
             });
@@ -158,6 +168,8 @@ class AppController {
                     this.sort.column = column;
                     this.sort.direction = 'asc';
                 }
+                // Nettoyer les items nouvellement créés lors d'un tri
+                this.tableRenderer.cellEditor.clearNewlyCreatedItems();
                 this.updateSortIndicators();
                 this.updateDisplay();
             });
@@ -167,6 +179,10 @@ class AppController {
     async loadItems() {
         try {
             this.currentBranch = this.elements.branchSelect.value;
+            
+            // Nettoyer la liste des items nouvellement créés lors du rechargement
+            this.tableRenderer.cellEditor.clearNewlyCreatedItems();
+            
             this.allItems = await this.itemLoader.loadAllItems(this.currentBranch);
             this.elements.saveBtn.disabled = false;
             this.statsManager.updateStats(this.allItems);
@@ -182,6 +198,9 @@ class AppController {
     }
 
     onDataImported(importedData) {
+        // Nettoyer la liste des items nouvellement créés lors de l'importation
+        this.tableRenderer.cellEditor.clearNewlyCreatedItems();
+        
         this.allItems = importedData.items;
         this.currentBranch = importedData.branch;
         this.elements.branchSelect.value = this.currentBranch;

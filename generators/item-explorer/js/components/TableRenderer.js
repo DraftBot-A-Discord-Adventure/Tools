@@ -14,6 +14,7 @@ class TableRenderer {
 
     displayItems(allItems, currentType, filters, sort, useColorCoding = false, useStatAnalysis = false) {
         let itemsToDisplay = [];
+        let newlyCreatedItems = [];
         
         // Collect items based on type filter
         if (currentType === 'all') {
@@ -27,13 +28,28 @@ class TableRenderer {
             itemsToDisplay = allItems[currentType] || [];
         }
         
-        // Apply filters
+        // Séparer les items nouvellement créés des autres
+        if (this.cellEditor && this.cellEditor.newlyCreatedItems) {
+            newlyCreatedItems = itemsToDisplay.filter(item => 
+                this.cellEditor.isNewlyCreated(item)
+            );
+            
+            // Retirer les items nouvellement créés de la liste principale pour éviter les doublons
+            itemsToDisplay = itemsToDisplay.filter(item => 
+                !this.cellEditor.isNewlyCreated(item)
+            );
+        }
+        
+        // Apply filters only to non-newly-created items
         itemsToDisplay = this.filterManager.filterItems(itemsToDisplay, filters);
+        
+        // Combiner les items nouvellement créés (en haut) avec les items filtrés
+        const finalItemsToDisplay = [...newlyCreatedItems, ...itemsToDisplay];
         
         // Calculate performance scores based on visible items
         let performanceData = null;
         if (useStatAnalysis && this.statAnalysis) {
-            performanceData = this.statAnalysis.calculatePerformanceScores(itemsToDisplay, currentType);
+            performanceData = this.statAnalysis.calculatePerformanceScores(finalItemsToDisplay, currentType);
             // Pass performance data to filter manager for sorting
             this.filterManager.setPerformanceData(performanceData);
         } else {
@@ -41,8 +57,12 @@ class TableRenderer {
             this.filterManager.setPerformanceData(null);
         }
         
-        // Apply sorting
-        itemsToDisplay = this.filterManager.sortItems(itemsToDisplay, sort);
+        // Apply sorting only to the filtered items (not to newly created ones)
+        if (sort && itemsToDisplay.length > 0) {
+            const sortedFilteredItems = this.filterManager.sortItems(itemsToDisplay, sort);
+            // Recombine: newly created items first, then sorted filtered items
+            finalItemsToDisplay.splice(0, finalItemsToDisplay.length, ...newlyCreatedItems, ...sortedFilteredItems);
+        }
         
         // Clear existing table content
         this.elements.tableBody.innerHTML = '';
@@ -50,7 +70,7 @@ class TableRenderer {
         // Calculate color coding ranges if enabled
         let colorRanges = null;
         if (useColorCoding) {
-            colorRanges = this.calculateColorRanges(itemsToDisplay);
+            colorRanges = this.calculateColorRanges(finalItemsToDisplay);
         }
         
         // Clear previous analysis highlighting
@@ -59,7 +79,7 @@ class TableRenderer {
         }
         
         // Populate table
-        itemsToDisplay.forEach(item => {
+        finalItemsToDisplay.forEach(item => {
             const row = this.createTableRow(item, currentType, colorRanges, performanceData);
             this.elements.tableBody.appendChild(row);
             
@@ -81,7 +101,7 @@ class TableRenderer {
         
         // NOUVEAU: Mettre à jour les statistiques avec les items actuellement visibles
         if (window.app && window.app.statsManager) {
-            window.app.statsManager.updateVisibleStats(itemsToDisplay, currentType);
+            window.app.statsManager.updateVisibleStats(finalItemsToDisplay, currentType);
         }
     }
 

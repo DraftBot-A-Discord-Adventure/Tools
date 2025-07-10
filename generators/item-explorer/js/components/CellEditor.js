@@ -6,6 +6,7 @@ class CellEditor {
         this.nextNewId = 10000; // Starting ID for new items
         this.highlightModifications = false;
         this.activeDropdown = null; // Track active dropdown
+        this.newlyCreatedItems = new Set(); // Track newly created items that should bypass filters
         
         this.initializeEventListeners();
     }
@@ -644,6 +645,10 @@ class CellEditor {
         // Ajouter à la catégorie appropriée - à la PREMIÈRE position
         window.app.allItems[itemType].unshift(newItem);
         
+        // Marquer cet item comme nouvellement créé pour bypasser les filtres
+        const itemKey = `${newItem.id}-${newItem.type}`;
+        this.newlyCreatedItems.add(itemKey);
+        
         // Refresh the display to show the new item
         window.app.updateDisplay();
         
@@ -755,5 +760,21 @@ class CellEditor {
             if (singleBtn) singleBtn.style.display = 'inline-flex';
             if (multipleButtons) multipleButtons.style.display = 'none';
         }
+    }
+
+    // Méthode pour vérifier si un item est nouvellement créé
+    isNewlyCreated(item) {
+        const itemKey = `${item.id}-${item.type}`;
+        return this.newlyCreatedItems.has(itemKey);
+    }
+
+    // Méthode pour nettoyer les items nouvellement créés (appelée lors du refresh)
+    clearNewlyCreatedItems() {
+        this.newlyCreatedItems.clear();
+    }
+
+    // Méthode pour obtenir les items nouvellement créés
+    getNewlyCreatedItems() {
+        return Array.from(this.newlyCreatedItems);
     }
 }
